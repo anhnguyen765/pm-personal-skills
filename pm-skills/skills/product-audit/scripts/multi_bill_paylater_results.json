@@ -1,0 +1,74 @@
+[
+  {
+    "row_index": 4,
+    "status": "Pass",
+    "evidence": "Multi-bill is integrated into the Bill Home and Checkout flows where users expect to pay multiple services. Entry points are consistent with Single Bill.",
+    "severity": "Low"
+  },
+  {
+    "row_index": 8,
+    "status": "Pass",
+    "evidence": "Bundle Order implementation uses a single primary CTA for the total payment, preventing double-submit risk via PE idempotency layer.",
+    "severity": "Low"
+  },
+  {
+    "row_index": 33,
+    "status": "Flag",
+    "evidence": "PayLater limit must sync immediately across surfaces. Risk identified in C40 doc regarding refund destination (Wallet vs PayLater limit). For credit products, refund must ideally revert to limit.",
+    "severity": "Medium"
+  },
+  {
+    "row_index": 34,
+    "status": "Pass",
+    "evidence": "Fees for PayLater (if any) are calculated on the total Bundle Order amount and displayed at the cashier before confirmation.",
+    "severity": "Low"
+  },
+  {
+    "row_index": 37,
+    "status": "Pass",
+    "evidence": "Every sub-order and the Bundle Order are mapped to FMC ledger entries. Distribution logic ensures financial reconciliation for each merchant.",
+    "severity": "Low"
+  },
+  {
+    "row_index": 40,
+    "status": "Flag",
+    "evidence": "In-product dispute path for specific sub-orders within a Bundle needs to be clearly defined in the Transaction Detail. Currently, it might only show at the Bundle level.",
+    "severity": "Medium"
+  },
+  {
+    "row_index": 42,
+    "status": "Pass",
+    "evidence": "PayLater is now available as a source of fund for Multi-bill (C40 upgrade), removing previous restrictions.",
+    "severity": "Low"
+  },
+  {
+    "row_index": 47,
+    "status": "Pass",
+    "evidence": "Result screen distinguishes between total success and partial success for independent bundles, providing clear status per sub-order.",
+    "severity": "Low"
+  },
+  {
+    "row_index": 48,
+    "status": "Pass",
+    "evidence": "Bundle ID and sub-order IDs are generated and visible in Transaction History for reference.",
+    "severity": "Low"
+  },
+  {
+    "row_index": 53,
+    "status": "Pass",
+    "evidence": "PayLater specific errors (Insufficient Limit, Account Locked) are passed from PE to the client with descriptive messages.",
+    "severity": "Low"
+  },
+  {
+    "row_index": 56,
+    "status": "Pass",
+    "evidence": "Anti-duplication is enforced at the Bundle Order level using the requestID from the client.",
+    "severity": "Low"
+  },
+  {
+    "row_index": 72,
+    "status": "Pass",
+    "evidence": "Idempotency is maintained for both the initial deduction and the subsequent fund distribution to sub-orders.",
+    "severity": "Low"
+  }
+]

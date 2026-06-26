@@ -1,0 +1,60 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swp
+*.swo
+*~
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# IDE & Editor
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Build & Compilation
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+*.dll
+
+# Dependencies
+/vendor/
+/node_modules/
+go.sum
+
+# Logs & Temporary
+*.log
+*.tmp
+/tmp/
+
+# Generated Artifacts (review before committing)
+/output/reports/*
+!/output/reports/.gitkeep
+/output/sandbox/*
+!/output/sandbox/.gitkeep
+
+# Compiled Go binaries (if committing source)
+/tooling/*/bin/
+/tooling/*/*.exe
+
+# Personal notes & configs
+.claude/
+.claude-code/
+personal-notes.md
+
+# Excel temp files
+~$*.xlsx
+*.xlsx~
+
+# Workspace state
+.vscode/settings.json.local

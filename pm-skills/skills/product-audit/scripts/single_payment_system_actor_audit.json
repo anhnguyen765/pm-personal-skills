@@ -1,0 +1,32 @@
+{
+  "input_path": "../assets/product_audit_template.xlsx",
+  "output_path": "../../../../pm-skills/output/reports/single_payment_technical_audit.xlsx",
+  "results": [
+    { "row_index": 4, "status": "Pass", "evidence": "API Entry Points: '/v2/create' (REST) and 'AcquiringCore/CreateOrder' (gRPC) are established as the primary entry points for Order Products. Entry point logic is centralized as per 'CORE Architecture and Boundaries' doc.", "severity": "Low" },
+    { "row_index": 5, "status": "Pass", "evidence": "Param Integrity: 'pmcid' (FMC) and 'app_trans_id' (Merchant) mapping is consistent across AC, PE, and AE. Verified that PE uses 'refapptransid' metadata for cross-architecture status mapping.", "severity": "Low" },
+    { "row_index": 8, "status": "Pass", "evidence": "Double-Submit Guard: AC calls PE (Payment Engine) for 'Check Payment Duplication' before returning the Confirm Pay response. Idempotency is enforced at both Order (AC) and Transaction (PE/AE) layers.", "severity": "Low" },
+    { "row_index": 11, "status": "Flag", "evidence": "Latency Performance: AC's 'Confirm Pay' orchestration involves multiple synchronous calls (UserProfile, PE, UserFee) before the async 'JobProcessPayment' enqueue. P99 latency peaks can cause gRPC deadline exceeded for Order Products.", "severity": "Medium" },
+    { "row_index": 13, "status": "Pass", "evidence": "Context Preservation: 'OrderContext' (documented in PS Order Engine) propagates all metadata (appId, appTransId, transactions) through Init, Processing, and Final states.", "severity": "Low" },
+    { "row_index": 21, "status": "Pass", "evidence": "Adaptive APIs: gRPC 'Code' (OK, UNKNOWN, INVALID_ARGUMENT, etc.) provides machine-readable feedback for calling services to decide on retries.", "severity": "Low" },
+    { "row_index": 29, "status": "Pass", "evidence": "Processing States: OrderEngine defines 6 statuses (INIT, PROCESSING, PENDING, etc.) clearly reflecting the internal state of the 'lite version of Saga Engine'.", "severity": "Low" },
+    { "row_index": 33, "status": "Pass", "evidence": "Money States: AE/PE distinguishes between SUBMITTED, PARTIAL_SUCCEEDED, and SUCCESS, ensuring granular fund movement visibility for ZAS postings.", "severity": "Low" },
+    { "row_index": 37, "status": "Pass", "evidence": "Ledger Mapping: Centralized Order Execution ensures every transaction in the 'Transaction Template' results in an FMC ledger event and a corresponding ZAS entry.", "severity": "Low" },
+    { "row_index": 51, "status": "Fail", "evidence": "Data Freshness: AC 'Confirm Pay' retrieves the order from 'Core' but the 'Accept Payment' step does not appear to validate a strict 'Adjusted' timestamp against a freshness token from the Cashier solution. Potential for stale-state execution if multiple cashier sessions are open.", "severity": "High" },
+    { "row_index": 53, "status": "Flag", "evidence": "Error Specificity: 'UNKNOWN' exchange status is used when network issues occur without agreement on external, which can be too broad for automated 'Safe-to-Retry' logic in AC.", "severity": "Medium" },
+    { "row_index": 56, "status": "Pass", "evidence": "Idempotency: Re-confirmed 'app_trans_id' mapping to 'order_id' in Redis for status consistency across PE/AC.", "severity": "Low" },
+    { "row_index": 60, "status": "Pass", "evidence": "Support Context: 'X-Correlation-ID' enables tracing through the hexagonal architecture (UserProfile -> PE -> AE -> ZAS).", "severity": "Low" },
+    { "row_index": 63, "status": "Pass", "evidence": "Case Status: State machine transitions (INIT -> PROCESSING -> SUCCESS/FAILED) are persisted in the OrderEngine for auditability.", "severity": "Low" }
+  ],
+  "summary": {
+    "squad_product": "Payment Core / Single Payment (AC -> PE -> AE -> ZAS)",
+    "reviewer": "Gemini (System-as-Actor Audit)",
+    "date": "21 May 2026",
+    "scope": "Technical verification of the Single Payment flow from the system-as-actor perspective. Evaluated Payment Core (PE/FMC) as the product and internal services (ACv2, AE, ZAS) as the users. Research grounded in 'Core Payment Architecture Revamp' and 'User Payment' specs.",
+    "key_risks": "1. [Critical] Stale-state execution risk in AC 'Accept Payment' due to missing 'Adjusted' timestamp validation (Row 51). 2. [Medium] Synchronous orchestration latency in AC 'Confirm Pay' (Row 11). 3. [Medium] Broad 'UNKNOWN' status in Exchange Engine affecting retry precision (Row 53).",
+    "high_severity": "Row 51 (Data Freshness): AC 'Confirm Pay' orchestration lacks a strict freshness check against the 'Adjusted' timestamp of the order at the point of 'Accept Payment'. This presents a high risk for orders where state might have changed (e.g. expiration or double-confirmation) between cashier load and user action.",
+    "med_severity": "1. Latency pressure on calling services due to sequential sync calls in AC (UserProfile, PE, UserFee). 2. The 'UNKNOWN' exchange status lacks sufficient metadata for calling services (AC) to safely decide on automatic fund-reversal vs. retry.",
+    "low_severity": "1. Excellent state machine design in Order Engine (Saga Pattern). 2. Consistent param integrity and centralized entry point for CORE. 3. Robust idempotency and traceability via Correlation ID.",
+    "next_steps": "1. [Urgent] Implement mandatory 'Adjusted' timestamp validation in AC 'Accept Payment'. 2. [Q3] Optimize AC 'Confirm Pay' by parallelizing UserProfile and MerchantApp/PE checks. 3. [Q4] Refine 'UNKNOWN' status with 'RetryableHint' metadata.",
+    "questions": "1. Is the Redis mapping for apptransid to orderid shared across all PE clusters or partitioned? 2. How does the 'lite Saga Engine' handle compensation if the ZAS posting fails after an AE success?"
+  }
+}

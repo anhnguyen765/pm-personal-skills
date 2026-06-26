@@ -1,0 +1,13 @@
+.DS_Store
+.env
+__pycache__/
+*.pyc
+
+# Gemini
+.gemini/chats/
+.gemini/tool-outputs/
+.gemini/logs-*.json
+
+# PM Skills output artifacts
+pm-skills/output/
+!pm-skills/output/.gitkeep

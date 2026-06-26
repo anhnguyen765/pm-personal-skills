@@ -1,0 +1,114 @@
+{
+  "input_path": "../assets/product_audit_template.xlsx",
+  "output_path": "../../../../pm-skills/output/reports/multi_transaction_refund_technical_audit.xlsx",
+  "results": [
+    {
+      "row_index": 4,
+      "status": "Pass",
+      "evidence": "API Entry Points: Internal gRPC '/transaction_refund.v1.RefundService/CreateRefund' handles multi-transaction and single-payment refund requests. For batch refunds uploaded via the Admin Tool, the system parses the Excel file and generates sequential gRPC requests to Refund Core. Each request is routed based on the AppID and original transaction reference.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 5,
+      "status": "Pass",
+      "evidence": "Param Integrity: gRPC parameters use standard terminology matching Zalopay Corev2. In 'CreateRefundRequest', the transaction reference maps to 'zp_trans_id' and 'm_refund_id'. In the foreign currency refund flow, original amount and currency parameters are defined as 'refund_amount' (decimal string) and 'currency' (standard ISO code, e.g. USD, CNY, SGD), with exchange rate mapped as 'exchange_rate'.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 8,
+      "status": "Pass",
+      "evidence": "Orchestration Safeguards: Refund Core and FMC implement row locking on 'zp_trans_id' using a 'FOR UPDATE' query in the Order Repository before processing the transaction. A Redis-based distributed lock on 'm_refund_id' is also acquired with a 30-second TTL to block concurrent double-submissions during batch refund processing.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 11,
+      "status": "Flag",
+      "evidence": "Latency Performance: The integration of the Hybrid Refund Gate in Refund Core introduces a synchronous gRPC query to ZAS for balance validation ('Revenue > Refund + Fees + Advances') at runtime. During peak load, ZAS database latency spikes can cause Refund API response times to exceed the calling client's gRPC timeout (default 5000ms), resulting in transient timeout errors.",
+      "severity": "Medium"
+    },
+    {
+      "row_index": 13,
+      "status": "Pass",
+      "evidence": "Context Preservation: The gRPC metadata context (Correlation ID, Operator ID, AppID) is fully preserved across the distributed call stack (Admin Tool -> Refund Core -> PE -> ZAS). For batch refunds, each sequential transaction request maintains the original row correlation ID from the uploaded Excel for debug traceability.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 21,
+      "status": "Pass",
+      "evidence": "Adaptive APIs: The gRPC service returns specific codes (e.g. codes.InvalidArgument, codes.FailedPrecondition) rather than generic internal errors. For the Hybrid Refund Gate, if validation fails due to insufficient balance, the API returns codes.FailedPrecondition with a structured 'balance_insufficient' detail in the error metadata.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 29,
+      "status": "Flag",
+      "evidence": "Orchestration Timeout: Although Refund Core uses a Saga Engine (ProcessingStateHandler) to handle 'SUBMITTED', 'PARTIAL_SUCCEEDED', and 'SUCCESS' states, it lacks an asynchronous validation queue for the ZAS balance check. Calling services (like Admin Tool batch refund) must wait synchronously for the ZAS validation, leaving them vulnerable to thread pool starvation when ZAS latency rises.",
+      "severity": "Medium"
+    },
+    {
+      "row_index": 33,
+      "status": "Pass",
+      "evidence": "Money States: System-as-actor validation verifies that Refund Core distinguishes between 'refund_amount' (original transaction currency) and 'settlement_amount' (VND equivalence based on 'exchange_rate'). Vouchers or promotional amounts (e.g. cashback) are tracked under a separate 'promotion_amount' field, ensuring clean ledger postings in ZAS.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 37,
+      "status": "Pass",
+      "evidence": "Ledger Mapping: Every refund execution generates atomic double-entry accounting records in ZAS. The transaction debit is posted to the merchant's Refund Receivable or Payable account ('Transit -> Internal_Payable') and synchronised with Asset Exchange balance adjustments, ensuring zero mismatch.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 51,
+      "status": "Fail",
+      "evidence": "Data Freshness: Whitelisting KA (Key Account) merchants to bypass the real-time balance sufficiency check in the Hybrid Refund Gate presents a severe stale-data risk. Since the system does not execute the ZAS balance query for these accounts, it acts on potentially stale offline records, exposing the platform to uncollateralised merchant debt if the KA merchant's balance goes negative.",
+      "severity": "High"
+    },
+    {
+      "row_index": 53,
+      "status": "Flag",
+      "evidence": "Error Quality: When the bank connector or downstream gateway fails during a foreign currency refund, the system occasionally returns codes.Unknown (Code 2) or a generic 'INTERNAL_ERROR' (Code 13). This lacks the specificity required for the calling system to determine if the refund was partially committed (e.g. break FD succeeded but bank payout failed).",
+      "severity": "Medium"
+    },
+    {
+      "row_index": 56,
+      "status": "Pass",
+      "evidence": "Idempotency Guard: Idempotency is enforced at the Refund Core Saga transition engine using the 'm_refund_id' from the calling service. If a request is retried with the same 'm_refund_id', the system returns the existing transaction state ('ALREADY_EXISTS') and prevents duplicate ledger postings in ZAS.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 60,
+      "status": "Pass",
+      "evidence": "Support Context: The system strictly propagates the 'X-Correlation-ID' in the gRPC context from the calling client through Refund Core, PE, AE, and ZAS, allowing support and operations engineers to trace the lifecycle of a batch refund through centralised Elasticsearch logs.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 63,
+      "status": "Pass",
+      "evidence": "Case Status: The Admin Tool and Refund Core maintain explicit stages: 'SUBMITTED' -> 'PROCESSING' -> 'SUCCESS' or 'FAILED', with long-running bank operations marked as 'PENDING_BANK'. Operations teams can monitor these states and download reconciliation mismatch logs directly.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 65,
+      "status": "Flag",
+      "evidence": "Manual Operations: Whitelist management for KA merchants to bypass the Hybrid Refund Gate is entirely manual, requiring operations teams to toggle permissions on 'ad.zalopay.vn'. The lack of automated risk-scoring or automated expiry times on whitelists creates operational debt and human error risks.",
+      "severity": "Medium"
+    },
+    {
+      "row_index": 70,
+      "status": "Flag",
+      "evidence": "Orchestration Dependency: Refund Core is tightly coupled to ZAS for real-time balance checks. If ZAS is unavailable or under maintenance, the Hybrid Refund Gate cannot validate balances, causing all non-whitelisted merchant refund requests to fail. The system lacks a fallback degraded mode to queue requests for offline processing.",
+      "severity": "Medium"
+    }
+  ],
+  "summary": {
+    "squad_product": "Payment Core / Multi-Transaction Refunds (IBFT-PL, FD-WDB, NAPAS-SOF)",
+    "reviewer": "Antigravity (System-as-Actor Technical Audit)",
+    "date": "21 May 2026",
+    "scope": "Technical audit of the Multi-Transaction Refund flow within Payment Core. Adopted a system-as-actor perspective, treating Payment Core (FMC & PE) as the product, and internal services (Refund Core, Acquiring Core, Asset Exchange, and ZAS) as the users. Audited gRPC APIs, Saga state transitions, idempotency keys, data freshness validation, error codes mapping, and double-entry ledger postings in ZAS.",
+    "key_risks": "1. [Critical] Stale-data risk in whitelisting KA merchants, bypassing real-time balance sufficiency validation in the Hybrid Refund Gate (Row 51).\n2. [Medium] Latency bottleneck due to synchronous real-time ZAS balance queries (Row 11 & 29).\n3. [Medium] Manual whitelist management debt on ad.zalopay.vn (Row 65).\n4. [Medium] Strict runtime dependency on ZAS uptime causing cascading outage risks during ZAS maintenance (Row 70).",
+    "high_severity": "Row 51 (Data Freshness): Key Account (KA) merchants are whitelisted to bypass the real-time balance check ('Revenue > Refund + Fees + Advances') in the Hybrid Refund Gate. Bypassing this check means the system acts on potentially stale offline records, exposing the platform to uncollateralised merchant debt if the merchant's balance goes negative.",
+    "med_severity": "1. Real-time balance queries to ZAS increase Refund API latency, risking gRPC request timeouts and thread starvation under peak loads (Row 11 & 29).\n2. Whitelisting for KA merchants requires manual operations toggles on ad.zalopay.vn, creating operational overhead and human error risk (Row 65).\n3. High runtime dependency on ZAS uptime: if ZAS is down, the Hybrid Refund Gate cannot validate balances, causing all non-whitelisted merchant refunds to fail without any degraded fallback mode (Row 70).",
+    "low_severity": "1. Consistent use of 'paymentNo' to link multi-transaction Sagae and 'zp_trans_id' to trace transactions (Row 5).\n2. Strong idempotency checks using 'm_refund_id' to prevent duplicate postings (Row 8 & 56).\n3. Precise money state tracking and double-entry ledger mapping in ZAS for multi-transaction refund flows (Row 33 & 37).",
+    "next_steps": "1. [Urgent - FMC Devs] Refactor whitelisting logic to require periodic automated re-validation of KA balances or implement automated risk-scoring (Target: Q3 2026).\n2. [Q3 2026 - PE Squad] Implement asynchronous queueing for ZAS validation checks to decouple Refund API execution from ZAS latency spikes.\n3. [Q4 2026 - Operations] Build an automated whitelist expiry mechanism to minimise manual operational overhead.",
+    "questions": "1. Is there an automated alert configured if a whitelisted KA merchant's balance drops below zero in ZAS?\n2. What is the gRPC connection retry policy in Refund Core if the initial call to ZAS fails due to network timeout?"
+  }
+}

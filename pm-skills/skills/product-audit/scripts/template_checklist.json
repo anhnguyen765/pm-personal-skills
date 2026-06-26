@@ -1,0 +1,539 @@
+{
+  "how_to_use": [
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "checklist": [
+    {
+      "row_index": 4,
+      "description": "Feature is where the user expects it; shortcuts match usage frequency.",
+      "what_to_check": "• Feature placement matches user mental model\n• High-frequency actions have shortcuts\n• Entry points consistent across home/hub/menu/search",
+      "failure_example": ""
+    },
+    {
+      "row_index": 5,
+      "description": "Labels use correct Vietnamese business terminology; avoids confusion between transfer/QR/receive/top-up/withdraw.",
+      "what_to_check": "• Labels match local terminology\n• No ambiguity between similar actions (chuyển ví vs chuyển bank vs QR)\n• Consistent naming across flows",
+      "failure_example": ""
+    },
+    {
+      "row_index": 6,
+      "description": "Search, quick actions, recent actions, and context CTAs exist to help users find features fast.",
+      "what_to_check": "• Search returns relevant results\n• Quick actions and recent actions available\n• Context CTAs surface at right moments",
+      "failure_example": ""
+    },
+    {
+      "row_index": 7,
+      "description": "Features grouped logically; mini-app content not mixed with core payment actions in a way that causes confusion.",
+      "what_to_check": "• Feature categories make intuitive sense\n• Mini-app / campaign content clearly separated from core utilities\n• No misleading groupings",
+      "failure_example": ""
+    },
+    {
+      "row_index": 8,
+      "description": "No duplicate CTAs doing the same thing on one screen; labels consistent; positions don't cause mistaps; no double-submit risk.",
+      "what_to_check": "• Only one primary CTA per key action\n• If two CTAs exist, same semantics and consistent labels\n• Double-submit guarded (CTA deactivated on submit)\n• 'X' / back behavior consistent across flows",
+      "failure_example": "Lending: duplicated 'X' buttons. MMF: tappable-looking elements that don't respond. 'Trạm Săn Thưởng' X goes to Bill home; 'Thống kê chi tiêu' X goes to Zalopay home."
+    },
+    {
+      "row_index": 9,
+      "description": "No duplicate versions of the same concept floating in different parts of the product (e.g., multiple transaction history views that aren't consistent).",
+      "what_to_check": "• Identify all versions of the same concept\n• Content/state synced across versions\n• Strategic reason documented if multiple versions exist\n• Deep links and notifications go to correct view",
+      "failure_example": "LSGD SDSL vs LSGD Zalopay vs lịch sử xu — user may think transaction is missing if they look at wrong history."
+    },
+    {
+      "row_index": 10,
+      "description": "Touch targets and spacing large enough to prevent accidental taps, especially at cashier, confirm, and home shortcuts.",
+      "what_to_check": "• No two CTAs placed too close together\n• Tap targets meet minimum size guidelines\n• Sticky elements don't obscure content\n• Swipe/back gestures don't conflict with CTAs\n• Acceptable on small-screen devices",
+      "failure_example": "OTA home: two tap zones too close, causing chaotic feel for users."
+    },
+    {
+      "row_index": 11,
+      "description": "Evaluate completion time not just for best-case but edge cases: slow network, OTP delay, source-of-fund change, missing KYC/PIN, pending reconciliation, return from bank app.",
+      "what_to_check": "• Minimum steps; minimal redundant confirmations\n• Clear exit/continue path always available\n• Edge cases tested: OTP timeout, network drop, bank callback delay",
+      "failure_example": ""
+    },
+    {
+      "row_index": 12,
+      "description": "Reduce manual input effort vs. competitors. Autofill, defaults, scan/contacts support, saved bills.",
+      "what_to_check": "• Autofill and recent suggestions available\n• Sensible defaults (amount, source, recipient)\n• Scan and contacts supported where relevant\n• Saved billers/recipients available\n• Compare steps/fields vs. benchmark apps",
+      "failure_example": ""
+    },
+    {
+      "row_index": 13,
+      "description": "Navigating from banner/notification/history into a flow preserves context and state.",
+      "what_to_check": "• Context preserved when entering from notification\n• State preserved when entering from history\n• Deep links land on correct screen",
+      "failure_example": ""
+    },
+    {
+      "row_index": 14,
+      "description": "Returning after backgrounding, network loss, OTP timeout, or bank callback still allows resumption.",
+      "what_to_check": "• App backgrounded and resumed: state intact\n• Network dropped mid-flow: can resume\n• OTP timeout: clear re-entry path\n• Bank/partner callback: returns to correct state",
+      "failure_example": ""
+    },
+    {
+      "row_index": 15,
+      "description": "User can exit/cancel any flow and feels in control. Back/close behavior is consistent. Exiting during processing directs user to check history rather than re-submit.",
+      "what_to_check": "• Back/close behavior consistent throughout flow\n• Cancel/exit option present when appropriate\n• Warning only shown when real risk exists (losing voucher ≠ risk)\n• Exiting during processing: clear 'check history' guidance\n• Returning to flow: resumes correctly or clears state clearly",
+      "failure_example": ""
+    },
+    {
+      "row_index": 16,
+      "description": "Cross-sell (banners, service suggestions, voucher upsells) must not interrupt the primary task.",
+      "what_to_check": "• Cross-sell doesn't obscure primary CTA\n• Cross-sell can be dismissed\n• Cross-sell doesn't reset input/state\n• Cross-sell doesn't redirect without intent\n• If mandatory: placed post-result or at entry, never at payment decision point",
+      "failure_example": ""
+    },
+    {
+      "row_index": 17,
+      "description": "No button requires more than one click or has too small a tap zone. Test across multiple devices and platforms.",
+      "what_to_check": "• All interactive elements respond on single tap\n• Tap zones meet minimum size\n• Tested on both iOS and Android, small and large screens",
+      "failure_example": ""
+    },
+    {
+      "row_index": 18,
+      "description": "Focused on each product's home screen (not just Zalopay home). High-frequency actions prioritized; utility vs. campaign hierarchy clear.",
+      "what_to_check": "• High-frequency actions prominently placed\n• Clear hierarchy: utility vs. campaign/cross-sell\n• Suggestion modules don't obscure primary CTA\n• Re-entry to in-progress tasks (pending, KYC, bill)\n• No inadvertent task-switching when user has clear intent",
+      "failure_example": ""
+    },
+    {
+      "row_index": 19,
+      "description": "Banners and suggestions support task completion; don't overwhelm core utility.",
+      "what_to_check": "• Banners are relevant and dismissable\n• Modules don't dominate above-the-fold real estate\n• Campaign content clearly differentiated from utility",
+      "failure_example": ""
+    },
+    {
+      "row_index": 20,
+      "description": "Reminders for in-progress tasks: pending bill, incomplete KYC, pending transaction, expiring voucher.",
+      "what_to_check": "• Pending bills surfaced proactively\n• Incomplete KYC/onboarding nudged\n• Pending transactions visible\n• Expiring vouchers/benefits reminded",
+      "failure_example": ""
+    },
+    {
+      "row_index": 21,
+      "description": "Content and quick actions adapt to user behavior (new vs. power user).",
+      "what_to_check": "• New users see onboarding-oriented actions\n• Power users see their most-used actions\n• Irrelevant actions for user segment are deprioritized",
+      "failure_example": ""
+    },
+    {
+      "row_index": 22,
+      "description": "New users can complete their first successful transaction with minimal friction. The path from install → KYC → first transaction is intentionally designed.",
+      "what_to_check": "• Onboarding steps are clear and sequenced logically\n• KYC requirements explained before user hits a wall\n• First transaction flow is the simplest possible\n• Drop-off points in activation funnel identified and monitored",
+      "failure_example": "User creates account, tries to transfer, hits KYC wall with no explanation of what's needed or how long it takes."
+    },
+    {
+      "row_index": 23,
+      "description": "When a feature requires prerequisites (KYC tier, linked bank, PIN setup), these are surfaced before the user invests effort in a flow they can't complete.",
+      "what_to_check": "• Prerequisites shown at entry point, not mid-flow\n• Clear upgrade/complete path provided\n• Estimated time/effort for prerequisite shown\n• Progress saved if user leaves to complete prerequisite",
+      "failure_example": "User fills out full bill payment form, hits submit, and only then learns their KYC level doesn't support this transaction type."
+    },
+    {
+      "row_index": 24,
+      "description": "Push notifications, SMS, and in-app messages are clear, actionable, and deep-link to the right screen. OTP messages are unambiguous.",
+      "what_to_check": "• Transaction confirmation notifications are specific (amount, recipient, status)\n• Deep link from notification goes to correct screen/state\n• OTP SMS copy is clear about what it's authorizing\n• Risk alert notifications explain what to do next\n• Notification volume doesn't cause opt-out fatigue",
+      "failure_example": "Ambiguous 'your transaction is being processed' push at 11pm with no deep link. User doesn't know if it succeeded or failed."
+    },
+    {
+      "row_index": 25,
+      "description": "Sufficient signals for user to trust they are paying the right person/merchant/QR before confirming.",
+      "what_to_check": "• Recipient name/verified status displayed clearly\n• QR source identified\n• Merchant verification signal present at cashier",
+      "failure_example": ""
+    },
+    {
+      "row_index": 26,
+      "description": "Define high-risk actions for each product (not just account takeover) and document mitigations beyond user authentication.",
+      "what_to_check": "• High-risk actions enumerated per product\n• Mitigation mechanisms documented\n• Mitigations go beyond UM authentication",
+      "failure_example": ""
+    },
+    {
+      "row_index": 27,
+      "description": "Alerts for unusual login, repeated OTP, unusual QR, or abnormal amounts — triggered at the right moment.",
+      "what_to_check": "• Unusual login patterns trigger alert\n• Repeated OTP attempts flagged\n• Unusual QR source signaled\n• Abnormal amounts (vs. user history) flagged",
+      "failure_example": ""
+    },
+    {
+      "row_index": 28,
+      "description": "When a user is flagged or blocked, they have a self-service path to resolve it in-product.",
+      "what_to_check": "• Blocked user shown clear reason\n• Self-service resolution path exists in-product\n• No dead-ends requiring unprompted CS contact",
+      "failure_example": "Agreement pay: risk-rejected transaction. User can't find face authentication entry point from Home or LSGD."
+    },
+    {
+      "row_index": 29,
+      "description": "Latency or frozen UI damages trust, especially at payment. Processing state, timeouts, and graceful fallbacks must be present.",
+      "what_to_check": "• Progress/processing state clearly shown\n• UI never appears frozen without feedback\n• Timeout includes specific message + 'check history' CTA\n• Double-tap disabled on submit\n• Graceful fallback on weak network",
+      "failure_example": ""
+    },
+    {
+      "row_index": 30,
+      "description": "Behavior and copy consistent between iOS and Android on critical flows.",
+      "what_to_check": "• Same terminology/labels across platforms\n• Same back/close, OTP, deeplink/callback logic\n• No feature gating discrepancy causing different information\n• UI follows platform conventions but business logic unchanged",
+      "failure_example": "Images occasionally broken on Android; large system font size breaks layout."
+    },
+    {
+      "row_index": 31,
+      "description": "Consent collection process is known and meets data privacy standards required by internal and external stakeholders.",
+      "what_to_check": "• Consent flow mapped and documented\n• Meets SBV / internal data privacy requirements\n• Consent is informed, not buried in T\u0026C\n• Re-consent triggered when scope changes",
+      "failure_example": ""
+    },
+    {
+      "row_index": 32,
+      "description": "Irreversible actions have clear confirmation, recipient verification, amount confirmation, and typo prevention.",
+      "what_to_check": "• Clear confirmation step before irreversible action\n• Recipient and amount confirmed together\n• Cooling-off or review step where appropriate\n• Typo prevention (e.g., amount field validation)\n• OTP does not lead directly to success without final confirmation",
+      "failure_example": "Stock purchase: entering OTP went straight to successful order status with no final confirmation screen."
+    },
+    {
+      "row_index": 33,
+      "description": "All 'money states' are consistent and explainable — not just balance. Available vs. pending/hold, source-specific availability, history reconciles with debits/credits.",
+      "what_to_check": "• Available vs. pending/hold clearly distinguished\n• Source-specific availability shown per payment method\n• History matches actual amount debited/credited\n• Benefits/points effect on total clearly shown\n• Refresh/sync after transaction: no mismatch across home/cashier/result/history",
+      "failure_example": "TikTokShop x BNPL: user approved for limit X, attempts purchase with limit X, TikTok says insufficient limit — because risk updated limit without notifying user."
+    },
+    {
+      "row_index": 34,
+      "description": "Fees, who pays, waiver conditions, and actual deducted amount shown clearly — not too early (kills motivation) and not too late (feels deceptive).",
+      "what_to_check": "• Fee shown before confirmation, not after\n• Who pays the fee is explicit\n• Waiver conditions clearly stated\n• Actual amount deducted matches what was shown",
+      "failure_example": "Installment users merged with BNPL now incur BNPL fees — cashier didn't explain why fee appeared."
+    },
+    {
+      "row_index": 35,
+      "description": "Benefits and promotions applied in-flow are transparent. Segment-specific eligibility is clear. Gap between advertised and actual received is minimized.",
+      "what_to_check": "• Benefit application clearly shown in flow\n• Segment eligibility explained where relevant\n• Edge cases where benefit may not apply are identified\n• Guardrails minimize advertised vs. actual gap",
+      "failure_example": "Promotion: segment received voucher but couldn't use it."
+    },
+    {
+      "row_index": 36,
+      "description": "For non-instant outcomes (fund purchase, IBFT pending, stock, BNPL/CL approval, eKYC): settlement timeline, reconciliation process, and next steps are clear.",
+      "what_to_check": "• Settlement timeline shown clearly\n• Reconciliation process explained\n• Next steps provided while waiting\n• User knows what will happen and when",
+      "failure_example": "Fund purchase: user doesn't know when shares are added to portfolio."
+    },
+    {
+      "row_index": 37,
+      "description": "Every transaction maps to ledger. Internal vs. partner reconciliation. Settlement mismatch alerts. Stuck transaction detection.",
+      "what_to_check": "• Every transaction has ledger mapping\n• Internal/partner reconciliation process defined\n• Mismatch alerts configured\n• Stuck transaction detection in place",
+      "failure_example": ""
+    },
+    {
+      "row_index": 38,
+      "description": "Users understand their transaction limits, daily caps, and KYC tier restrictions before hitting them — with a clear upgrade path.",
+      "what_to_check": "• Current limits visible in-product (not buried in FAQ)\n• Limit displayed at entry point for limit-sensitive flows\n• When limit is reached: clear explanation + upgrade path\n• Daily/monthly cap resets communicated\n• KYC tier upgrade path surfaced proactively",
+      "failure_example": "User attempts high-value transfer, hits limit mid-flow with no explanation of current limit or how to increase it."
+    },
+    {
+      "row_index": 39,
+      "description": "Where SBV regulations require specific disclosures, confirmations, or cooling-off periods, these are designed intentionally — not bolted on in ways that confuse users.",
+      "what_to_check": "• Mandatory disclosures (lending, insurance, securities) are clear and placed correctly\n• Cooling-off periods explained in plain language\n• Regulatory consent is distinguishable from marketing consent\n• Compliance UX reviewed with legal/compliance team\n• Regulatory friction is acknowledged and minimized where allowed",
+      "failure_example": ""
+    },
+    {
+      "row_index": 40,
+      "description": "Users know what they can do after a transaction goes wrong — dispute, refund, chargeback — and can initiate this in-product.",
+      "what_to_check": "• Dispute initiation path visible from transaction detail\n• Refund eligibility and timeline communicated\n• For lending: early repayment, restructure, complaint options are discoverable\n• User rights not hidden in T\u0026C only\n• CS escalation path reachable from transaction detail",
+      "failure_example": "User charged incorrectly; transaction detail shows no dispute option — only a generic CS contact button with no context."
+    },
+    {
+      "row_index": 41,
+      "description": "Default SoF logic is generalizable across all payment methods. Defaults to most-recently-used + available. User can override and app remembers choice.",
+      "what_to_check": "• Default follows recent behavior + availability\n• Avoids defaulting to high-fail sources\n• User can override and preference is remembered\n• Available/unavailable sources clearly shown\n• Changing source doesn't break flow state",
+      "failure_example": ""
+    },
+    {
+      "row_index": 42,
+      "description": "Commitment to openness: user can choose any SoF; if not, they understand why; user can configure SoF per product/context.",
+      "what_to_check": "• Any SoF can be selected where technically supported\n• Restrictions are explained (not silent)\n• User can configure SoF preference per product\n• BNPL not limited to ZLP VietQR only",
+      "failure_example": "BNPL not yet available for non-ZLP VietQR."
+    },
+    {
+      "row_index": 43,
+      "description": "Users can link, unlink, view status, and understand consequences of unlinking.",
+      "what_to_check": "• Link/unlink flow is straightforward\n• Current linked status visible\n• Consequences of unlinking explained\n• Unlinking doesn't break active agreement-pay arrangements silently",
+      "failure_example": ""
+    },
+    {
+      "row_index": 44,
+      "description": "When primary source fails: logical fallback suggestion (change source, top up, retry).",
+      "what_to_check": "• Failure message names the failed source\n• Fallback options offered (change SoF, top-up, retry)\n• Fallback doesn't lose transaction state",
+      "failure_example": ""
+    },
+    {
+      "row_index": 45,
+      "description": "Before entering a flow, user understands what they're about to do and has all prerequisites. Clarity ≠ verbosity.",
+      "what_to_check": "• Prerequisites communicated at entry (not mid-flow)\n• Clear description of what will happen\n• Avoid confusing 'clear' with 'lengthy' — concise is better",
+      "failure_example": ""
+    },
+    {
+      "row_index": 46,
+      "description": "Loading, processing, waiting for partner/bank callback — each state is visually distinguishable.",
+      "what_to_check": "• Loading vs. processing vs. waiting for partner clearly differentiated\n• Round-trip journey states (outbound/return) shown\n• No silent waiting states",
+      "failure_example": ""
+    },
+    {
+      "row_index": 47,
+      "description": "Result screen clearly distinguishes: success / fail / pending / under reconciliation. Copy is unambiguous.",
+      "what_to_check": "• Success, fail, pending, reconciliation — visually and copy-wise distinct\n• No contradictory signals (e.g., green tick + 'processing' copy)",
+      "failure_example": "IBFT result page: 'Transaction processing' copy with green success tick — contradictory signals."
+    },
+    {
+      "row_index": 48,
+      "description": "Key events have IDs: transaction ID, ticket number, request ID, application ID.",
+      "what_to_check": "• Transactions have transaction IDs\n• OTA/Movie tickets have ticket numbers\n• KYC/NFC/bank link requests have request IDs\n• Loan/BNPL applications have application IDs\n• IDs are copyable from the UI",
+      "failure_example": ""
+    },
+    {
+      "row_index": 49,
+      "description": "When service is in maintenance or interrupted: status is clear, scope is accurate, ETA provided, alternatives offered.",
+      "what_to_check": "• Maintenance vs. error: clearly distinguished\n• Scope: ZLP issue vs. partner issue\n• ETA or expected window shown\n• Alternatives offered (different service, retry later)\n• Entry point disabled before user reaches cashier\n• For permanent sunsetting: entry point removed + migration explanation",
+      "failure_example": ""
+    },
+    {
+      "row_index": 50,
+      "description": "Necessary information appears at the right decision moment — not too early, not too late.",
+      "what_to_check": "• Fee/limit/KYC requirement shown before confirm step\n• Risk warning shown immediately before high-risk action\n• Downtime signaled at entry or before submit\n• Benefit/voucher conditions shown at point of use\n• Avoid overload: only show what's needed at that step",
+      "failure_example": "Lending fee: user told about fee on day 28 but was actually charged from first transaction. Agreement pay: only discovered insufficient funds after Apple already billed."
+    },
+    {
+      "row_index": 51,
+      "description": "When displayed data may be cached or outdated (portfolio value, credit limit, loyalty points, exchange rates), the product signals this to the user.",
+      "what_to_check": "• Cached data shows last-updated timestamp or freshness indicator\n• High-stakes numbers (balance, limit, portfolio value) have refresh option\n• Stale credit limit doesn't mislead users into starting a transaction they can't complete\n• Exchange rate validity window shown for FX transactions",
+      "failure_example": "Portfolio value on stock home different from portfolio value on FS hub — user confused about true balance."
+    },
+    {
+      "row_index": 52,
+      "description": "After a transaction, all affected balances, history entries, and statuses sync promptly and consistently across all surfaces.",
+      "what_to_check": "• Balance updates on home after transaction\n• History entry appears within expected time\n• Linked bank status reflects latest\n• Voucher/ticket status updates\n• Loyalty/points balance updates\n• No contradictory states between home/cashier/result/history",
+      "failure_example": "Voucher used in transaction still shows as 'available' in voucher wallet 10 minutes later."
+    },
+    {
+      "row_index": 53,
+      "description": "Errors are specific (PIN/OTP/bank timeout/insufficient funds/KYC/maintenance) not generic.",
+      "what_to_check": "• Error message names the specific issue\n• Error code available for CS reference\n• Different error types have distinct messages",
+      "failure_example": "Risk-blocked transactions show generic 'transaction failed'; MMF rule violations don't explain what rule was violated."
+    },
+    {
+      "row_index": 54,
+      "description": "Every error tells the user their next step: retry / change source / check history / contact CS / upgrade KYC.",
+      "what_to_check": "• Next step explicitly stated\n• Action button present where appropriate\n• Entry point for self-service resolution is reachable",
+      "failure_example": "Agreement pay risk-blocked: user needs face auth to re-enable but can't find entry point from Home or LSGD. Stock order not matched: no explanation of why (odd lot = lower match probability)."
+    },
+    {
+      "row_index": 55,
+      "description": "On failure, retain user input (amount, bill code, recipient, source) to avoid re-entry.",
+      "what_to_check": "• Form input preserved on error/failure\n• User can correct and retry without re-entering all fields",
+      "failure_example": ""
+    },
+    {
+      "row_index": 56,
+      "description": "Retry / back / refresh doesn't cause double payment or duplicate request. Anti-duplication mechanism in place.",
+      "what_to_check": "• Retry is idempotent\n• Back/refresh doesn't resubmit\n• Duplicate request detection active",
+      "failure_example": ""
+    },
+    {
+      "row_index": 57,
+      "description": "Error UI is not abrupt or alarming. Visual design is calm. Copy is supportive, not accusatory. Inline guidance preferred over full-screen modals for routine errors.",
+      "what_to_check": "• No sudden full-screen error popups for routine failures\n• No aggressive red warning graphics for non-critical errors\n• Copy is calm, clear, supportive\n• Inline guidance used where appropriate instead of modal interruption",
+      "failure_example": "Sudden full-screen red warning modal for a routine OTP failure. Copy: 'Transaction FAILED!' with no context."
+    },
+    {
+      "row_index": 58,
+      "description": "The product team has intentionally designed what the product looks like during peak load (Tet, 11/11), partner maintenance, or partial outage — not left to chance.",
+      "what_to_check": "• Degraded-mode states are designed and documented\n• Entry points disabled or labeled before user reaches cashier\n• Degraded-mode tested before peak events\n• Rollback / feature flag capability in place\n• Product team notified of partner maintenance windows in advance",
+      "failure_example": "Tet period: payment feature silently degraded; users discover failure at cashier with no warning."
+    },
+    {
+      "row_index": 59,
+      "description": "OTP delivery reliability across carriers is monitored. Fallback OTP mechanisms exist. Failures are surfaced to users with recovery options.",
+      "what_to_check": "• OTP delivery success rate monitored by carrier\n• Fallback mechanism available (in-app OTP, alternative contact)\n• User shown how to retry or use fallback if OTP not received\n• OTP expiry is generous enough for realistic delivery times\n• Rate limiting doesn't block legitimate OTP retries",
+      "failure_example": "User on certain carrier doesn't receive OTP; no fallback; flow is completely blocked."
+    },
+    {
+      "row_index": 60,
+      "description": "When an issue occurs, the support system has enough context to resolve quickly without asking the user to repeat basic information.",
+      "what_to_check": "• Transaction/biller/merchant auto-attached to case\n• Status, SoF, and timeline available to agent\n• Reference ID and error code present\n• User/agent not required to re-provide basic info",
+      "failure_example": "User calls CS without reference event ID; CS must trace actions from userID only."
+    },
+    {
+      "row_index": 61,
+      "description": "Cases are routed to the correct queue/team with clear ownership. Issue classified by domain (bank/partner/mini-app/transfer).",
+      "what_to_check": "• Issue classification by domain is automated or guided\n• SLA defined per category\n• Escalation path defined\n• Handoff between queues is traced",
+      "failure_example": ""
+    },
+    {
+      "row_index": 62,
+      "description": "Handler (user self-serve or agent) knows the 'next best action'. Specific guidance. Guardrail against double-submit.",
+      "what_to_check": "• Specific guidance per error type (retry, wait, refund, contact bank)\n• Double-submit guardrail active\n• Response templates are consistent and accurate",
+      "failure_example": ""
+    },
+    {
+      "row_index": 63,
+      "description": "Case/transaction status is visible and updated. New → in progress → waiting reconciliation → resolved. User and agent understand what's being waited for.",
+      "what_to_check": "• Status stages are well-defined\n• User can see current status in-product\n• Agent can see full status history\n• Clear communication when waiting on external party (bank/partner)",
+      "failure_example": ""
+    },
+    {
+      "row_index": 64,
+      "description": "When user reaches a dead-end they cannot self-resolve, there is a pathway to contact CS directly from the product page or status page.",
+      "what_to_check": "• CS contact option on error/dead-end screens\n• CS contact pre-populates context (transaction ID, flow)\n• Not just a generic 'contact us' link",
+      "failure_example": "eKYC NFC flow: user fails, doesn't know what to do, no CS entry point from failure screen."
+    },
+    {
+      "row_index": 65,
+      "description": "Identify what is currently handled manually in connection with this product — assess automation opportunity or risk.",
+      "what_to_check": "• Manual processes supporting this product are documented\n• Volume and frequency of manual work estimated\n• Automation roadmap or risk noted",
+      "failure_example": ""
+    },
+    {
+      "row_index": 66,
+      "description": "Speed of home/QR scan/confirm/result/history; performs on weak network and mid-range devices.",
+      "what_to_check": "• Load time benchmarked for top 10 critical screens\n• Tested on weak network (3G equivalent)\n• Tested on mid-range Android device",
+      "failure_example": ""
+    },
+    {
+      "row_index": 67,
+      "description": "After action: balance/history/linked bank/voucher/ticket status syncs in time. No mismatch between surfaces.",
+      "what_to_check": "• All affected surfaces sync after action\n• Sync timing is within acceptable window\n• No contradictory states across surfaces",
+      "failure_example": "Portfolio value on stock home ≠ portfolio value on FS hub."
+    },
+    {
+      "row_index": 68,
+      "description": "Flows through bank app / webview / partner return to correct state; session is not lost.",
+      "what_to_check": "• Return from bank app lands on correct state\n• Webview return preserves session\n• Partner callback handled correctly\n• Session not lost on return",
+      "failure_example": ""
+    },
+    {
+      "row_index": 69,
+      "description": "Critical flows have reference/debug info. Error codes mappable. Key steps logged. Sensitive data not exposed.",
+      "what_to_check": "• Error/status codes are documented and mappable\n• Reference ID available for CS/tech lookup\n• Key step logs: submit, callback, processing, result\n• Retry-safe vs. not-safe states distinguishable\n• No sensitive data exposed in logs/UI",
+      "failure_example": ""
+    },
+    {
+      "row_index": 70,
+      "description": "Failure in one feature doesn't cascade to crash home or cashier. Partner/mini-app downtime doesn't block core payment.",
+      "what_to_check": "• Feature failure doesn't crash home/cashier\n• Partner/mini-app down doesn't block core payment\n• Controlled degradation: entry point hidden/disabled\n• Impact scope communicated clearly\n• Fallback available",
+      "failure_example": "Tarot feature failure caused cascade to transfer product."
+    },
+    {
+      "row_index": 71,
+      "description": "Critical actions/APIs have rate limits/cooldowns. OTP, login, payment submission protected. Message shown when limit hit.",
+      "what_to_check": "• Rate limits defined for OTP, login, payment, resend\n• Limit is reasonable relative to legitimate behavior\n• Message clear when limit hit + wait time shown\n• No 'false positive' lockouts without recovery\n• Combined with double-submit protection",
+      "failure_example": ""
+    },
+    {
+      "row_index": 72,
+      "description": "Unique transaction IDs. Retries are safe. Duplicate submissions prevented. Network retry safe. Webhook duplicates handled.",
+      "what_to_check": "• Unique transaction ID per submission\n• Retry of same transaction is idempotent\n• Duplicate form submission prevented\n• Network-level retry safe\n• Webhook/callback duplicates deduplicated",
+      "failure_example": ""
+    },
+    {
+      "row_index": 73,
+      "description": "When something that affects the user changes — rates, limits, fees, product terms, partner changes — the user is informed proactively in-product, not discovered by surprise.",
+      "what_to_check": "• Rate changes (MMF yield, lending rate) communicated before effective date\n• Limit changes notified before user hits new limit\n• Fee structure changes given notice period\n• Partner sunset/change communicated with migration path\n• Communication is in-product, not just email/T\u0026C update",
+      "failure_example": "User discovers their MMF yield rate dropped only when they check their monthly summary — no in-app notification was sent."
+    },
+    {
+      "row_index": 74,
+      "description": "The product gets demonstrably better at serving a user the longer they use it: smarter defaults, remembered preferences, proactive relevant alerts.",
+      "what_to_check": "• Defaults improve based on usage history\n• Preferences are remembered and applied\n• Relevant alerts sent (bill due, low balance before scheduled payment)\n• Power users are rewarded with efficiency, not penalized with more friction",
+      "failure_example": ""
+    },
+    {
+      "row_index": 75,
+      "description": "A user who had a bad experience (failed transaction, blocked account, support case) has a clear path to confidence recovery — visible in-product.",
+      "what_to_check": "• Post-resolution: user shown what was fixed\n• Account restored: clear confirmation in-product\n• Long-pending case: proactive status update sent\n• User not left to wonder if their issue was actually resolved",
+      "failure_example": "User's disputed transaction resolved after 5 days — no in-app notification, user discovers it by checking history."
+    },
+    {
+      "row_index": 76,
+      "description": "Users can see the cumulative value they've received from using the product (savings, cashback, interest earned, benefits used) — making the value proposition tangible over time.",
+      "what_to_check": "• Cumulative cashback/rewards visible\n• Interest earned shown (SDSL, MMF)\n• Benefit summary available (monthly or on demand)\n• Value realization tied to specific product actions\n• Helps retention by making switching costs tangible",
+      "failure_example": ""
+    },
+    {
+      "row_index": 77,
+      "description": "The product communicates in a consistent tone across all touchpoints — in-flow copy, notifications, error messages, marketing banners — that aligns with Zalopay's brand.",
+      "what_to_check": "• Error messages: calm, supportive, not accusatory\n• Marketing copy: doesn't oversell or create false urgency\n• Notifications: informative, not alarmist\n• Financial copy: precise, not vague\n• Tone is consistent across iOS, Android, and web",
+      "failure_example": ""
+    },
+    {
+      "row_index": 78,
+      "description": "The product does not set expectations it cannot reliably meet. Promises made in onboarding, marketing, or UX copy are consistently fulfilled.",
+      "what_to_check": "• Advertised features work as described\n• Processing time estimates are accurate (not aspirational)\n• Benefit eligibility matches what was communicated\n• Edge cases where promises may not hold are acknowledged",
+      "failure_example": "Onboarding promises 'instant transfer to any bank' — user later discovers certain banks have 30-min delays with no in-flow warning."
+    }
+  ],
+  "summary": [
+    {
+      "label": "",
+      "value": "Audit Summary"
+    },
+    {
+      "label": "",
+      "value": "Squad / Product: _______________     Reviewer: _______________     Date of Audit: _______________"
+    },
+    {
+      "label": "",
+      "value": "AUDIT SCOPE"
+    },
+    {
+      "label": "",
+      "value": "Which product flows / user journeys were reviewed?"
+    },
+    {
+      "label": "",
+      "value": "KEY RISKS IDENTIFIED (Flag / Fail)"
+    },
+    {
+      "label": "",
+      "value": "List top findings here — dimension, criterion, and specific gap"
+    },
+    {
+      "label": "",
+      "value": "HIGH SEVERITY ITEMS (🔴)"
+    },
+    {
+      "label": "",
+      "value": "Items requiring immediate action"
+    },
+    {
+      "label": "",
+      "value": "MEDIUM SEVERITY ITEMS (🟡)"
+    },
+    {
+      "label": "",
+      "value": "Items to address this quarter"
+    },
+    {
+      "label": "",
+      "value": "LOW SEVERITY / PASS HIGHLIGHTS"
+    },
+    {
+      "label": "",
+      "value": "Notable strengths or minor polish items"
+    },
+    {
+      "label": "",
+      "value": "PROPOSED NEXT STEPS"
+    },
+    {
+      "label": "",
+      "value": "Owner, action, and target date"
+    },
+    {
+      "label": "",
+      "value": "OPEN QUESTIONS / DEPENDENCIES"
+    },
+    {
+      "label": "",
+      "value": "Blockers or items needing input from other teams"
+    }
+  ]
+}

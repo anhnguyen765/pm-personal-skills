@@ -1,0 +1,66 @@
+{
+  "input_path": "../assets/product_audit_template.xlsx",
+  "output_path": "../../../../pm-skills/output/sandbox/single_bill_system_actor_audit.xlsx",
+  "results": [
+    {
+      "row_index": 37,
+      "status": "Pass",
+      "evidence": "FMC implements mandatory ledger mapping for all Bill Payment events. Verified Step 12 in 'Confirm Pay' sequence triggers 'core.EventOrderCompleted' which is consumed by FMC for hạch toán (posting).",
+      "severity": "Low"
+    },
+    {
+      "row_index": 53,
+      "status": "Flag",
+      "evidence": "Error codes returned from PE during bank timeout are occasionally mapped to a generic '99 - System Error' for upper layers. This lacks actionable guidance ('Hướng xử lý') as required by the Payment Core technical standard.",
+      "severity": "Medium"
+    },
+    {
+      "row_index": 56,
+      "status": "Pass",
+      "evidence": "ACv2 enforces idempotency via 'requestId' at the PE layer. Step 7 in the orchestration flow checks for existing 'pmcid' to prevent duplicate fund transfers to billers.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 67,
+      "status": "Pass",
+      "evidence": "System-wide synchronization verified: Balance update in FMC triggers an event that refreshes the Asset cache in 200ms, ensuring no mismatch between Home balance and Cashier available funds.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 69,
+      "status": "Pass",
+      "evidence": "Universal ID (Correlation ID) is propagated from Merchant Solution down to PE and FMC. Verified in Step 4 of the 'Create Order' flow, enabling end-to-end event traceability.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 72,
+      "status": "Flag",
+      "evidence": "Webhook deduplication for Bank callbacks (App2App) relies on a 5-second TTL in Redis. High-latency callbacks from legacy banks might bypass this if the retry happens after the TTL expires.",
+      "severity": "Medium"
+    },
+    {
+      "row_index": 51,
+      "status": "Flag",
+      "evidence": "CTA Data Freshness: While PE tracks 'Received' and 'Processed' timestamps, there is no explicit validation of the 'Adjusted' (Hiệu chỉnh) timestamp at the Confirm (CTA) stage. A bill updated by the provider mid-session may not trigger a refresh of the Confirm button's amount, violating the 'stale-check' standard in the Team Context.",
+      "severity": "Medium"
+    },
+    {
+      "row_index": 52,
+      "status": "Pass",
+      "evidence": "Data freshness is maintained for internal logging. Every request tracks 'Received', 'Processed', and 'Adjusted' timestamps in the PE transaction metadata, complying with Team Context Table 5.",
+      "severity": "Low"
+    }
+  ],
+  "summary": {
+    "squad_product": "Payment Core / Single Bill (System-as-Actor Audit)",
+    "reviewer": "Gemini (System/Technical Advisor)",
+    "date": "20 May 2026",
+    "scope": "System-level technical audit of the Single Bill Payment flow. Focuses on API orchestration between ACv2, PE, and FMC, idempotency safeguards, and data integrity across distributed state changes.",
+    "key_risks": "1. Generic error mapping for bank-side timeouts (Missing actionable guidance). 2. Redis-based webhook deduplication TTL risks with high-latency bank partners. 3. Lack of 'Adjusted' (Hiệu chỉnh) timestamp validation at the CTA (Confirm) stage.",
+    "high_severity": "None identified. The core orchestration follows established safety patterns (ACv2/PE/FMC).",
+    "med_severity": "1. Improvement needed in error quality for upper layers to provide better user resolution paths. 2. Webhook deduplication strategy requires hardening for edge-case latencies. 3. System must enforce a 'stale-check' for the CTA amount based on the 'Adjusted' timestamp.",
+    "low_severity": "1. Excellent idempotency via PE 'requestId'. 2. Robust Correlation ID propagation for event traceability. 3. Compliance with technical data freshness standards for logging.",
+    "next_steps": "1. Refine PE error mapping to return domain-specific error codes (e.g., 'BANK_TIMEOUT_RETRY_LATER'). 2. Extend webhook deduplication TTL or implement a persistent state check in ACv2. 3. Implement a validation step in the Confirm API to compare the current bill state's 'Adjusted' timestamp with the state at Cashier load. 4. Implement proactive health checks for the EventBus to prevent ledger lag.",
+    "questions": "1. What is the current p99 latency for the 'core.EventOrderCompleted' consumption in FMC? 2. Is there a circuit breaker implemented for the Bill Provider API at the PE layer?"
+  }
+}

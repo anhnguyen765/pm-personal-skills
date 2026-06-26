@@ -1,0 +1,30 @@
+{
+  "input_path": "../assets/product_audit_template.xlsx",
+  "output_path": "../../../../pm-skills/output/reports/direct_bank_sof_technical_audit_v2.xlsx",
+  "results": [
+    { "row_index": 4, "status": "Pass", "evidence": "API Entry Points: Payment Core (PE) exposes gRPC endpoints to the User (ACv2). Verified that 'bank_code' is correctly accepted and used to trigger bank-specific orchestration logic.", "severity": "Low" },
+    { "row_index": 5, "status": "Pass", "evidence": "Param Integrity: Parameter naming (e.g., 'app_trans_id') is consistent between the User (ACv2) and Payment Core (PE), ensuring seamless mapping to the internal 'pmcid'.", "severity": "Low" },
+    { "row_index": 8, "status": "Pass", "evidence": "Double-Submit Guard: Payment Core enforces idempotency for the User (ACv2) using 'app_trans_id'. Subsequent calls with the same ID return the existing 'CREATED' or 'SUCCESS' state.", "severity": "Low" },
+    { "row_index": 11, "status": "Flag", "evidence": "Latency: Payment Core's synchronous wait for Bank Gateways causes P99 > 3s. This creates connection pressure for the User (ACv2) and risks exceeding the 500ms REST SLA for external Merchants.", "severity": "Medium" },
+    { "row_index": 24, "status": "Pass", "evidence": "Actionable Callbacks: Payment Core (FMC) triggers proactive webhooks to the User (Merchant) and status updates to the User (ACv2) upon receiving bank finality.", "severity": "Low" },
+    { "row_index": 28, "status": "Flag", "evidence": "Self-Service: For 'Blocked Merchant' states, Payment Core returns generic errors to the User (ACv2). No machine-readable 'ResolutionPath' is provided for the User to handle automatically.", "severity": "Medium" },
+    { "row_index": 37, "status": "Pass", "evidence": "Ledger Mapping: Payment Core (FMC) correctly orchestrates ledger entries, crediting the User (ZAS) 'Userfee Payable' for bank fees and 'MC Payable' for the principal amount.", "severity": "Low" },
+    { "row_index": 40, "status": "Pass", "evidence": "Dispute Path: Payment Core provides 'is_refundable' metadata to the User (Refund Core), enabling safe reversal orchestration for direct bank transactions.", "severity": "Low" },
+    { "row_index": 51, "status": "Fail", "evidence": "Data Freshness: Payment Core fails to validate the 'Adjusted' timestamp provided by the User (ACv2) during 'ConfirmOrder'. This risks executing payments against stale order data.", "severity": "High" },
+    { "row_index": 53, "status": "Flag", "evidence": "Error Specificity: Payment Core fails to propagate specific failure context from the User (AE) or Bank Gateway to the User (ACv2), often returning generic -500 errors.", "severity": "Medium" },
+    { "row_index": 60, "status": "Pass", "evidence": "Event Traceability: Payment Core ensures 'Correlation ID' propagation across the chain (ACv2 -> PE -> AE -> ZAS), allowing Users (Ops/CS) to trace requests end-to-end.", "severity": "Low" },
+    { "row_index": 72, "status": "Pass", "evidence": "Callback Deduplication: Payment Core (PE) uses 'zp_trans_id' to deduplicate callbacks from the User (Bank Gateway), preventing double-credit for the User (Merchant).", "severity": "Low" }
+  ],
+  "summary": {
+    "squad_product": "Payment Core / Direct Bank SOF (Normal Payment)",
+    "reviewer": "Gemini (System-as-User Audit)",
+    "date": "20 May 2026",
+    "scope": "Technical audit of the Direct Bank SOF flow with Payment Core (PE/FMC) as the product. Internal users evaluated: ACv2 (Orchestration), AE (Fund Movement), ZAS (Ledger), and Refund Core (Reversals). Focus on cross-service contract reliability and orchestration safety.",
+    "key_risks": "1. [Critical] Payment Core fails to validate 'Adjusted' timestamp from User (ACv2) in Confirm phase (Row 51). 2. [Medium] Latency pressure from synchronous bank processing on User (ACv2) SLAs (Row 11). 3. [Medium] Generic error mapping masking User (AE) failure specifics (Row 53).",
+    "high_severity": "Orchestration Safety (Row 51): Payment Core does not verify the freshness of the order state during 'ConfirmOrder'. If the User (ACv2) sends a stale request, Payment Core may execute a payment for an outdated price or item set, causing financial discrepancy.",
+    "med_severity": "1. Communication Quality: Payment Core masks specific failure codes from AE/Banks as generic -500 errors to the User (ACv2). 2. Latency: High P99 response times from Payment Core impact the availability of the User (ACv2) connection pool.",
+    "low_severity": "1. Robust ledger mapping to User (ZAS). 2. Excellent traceability via Correlation IDs across internal User systems. 3. Strong idempotency for the primary User (ACv2).",
+    "next_steps": "1. [Urgent] Implement 'Adjusted' timestamp validation in PE handler for all User (ACv2) 'Confirm' calls. 2. [Q3] Enhance error propagation logic to return specific 'sub_return_code' to the User (ACv2). 3. [Q3] Pilot async notification for the User (ACv2) to handle long-running bank flows.",
+    "questions": "1. Should Payment Core provide more granular 'Processing' sub-states to the User (ACv2)? 2. Is the 'Userfee Payable' account mapping in ZAS slated for migration to Internal Wallet for Bank SOFs?"
+  }
+}

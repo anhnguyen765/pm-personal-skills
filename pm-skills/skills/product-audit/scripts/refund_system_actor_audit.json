@@ -1,0 +1,31 @@
+{
+  "input_path": "../assets/product_audit_template.xlsx",
+  "output_path": "../../../../pm-skills/output/reports/refund_technical_audit.xlsx",
+  "results": [
+    { "row_index": 4, "status": "Pass", "evidence": "API Entry Points: Internal gRPC '/transaction_refund.v1.RefundService/CreateRefund' is the primary entry point. System-as-actor: Refund Core acts as the 'User' of the Payment Core (FMC/PE) refund orchestration product.", "severity": "Low" },
+    { "row_index": 5, "status": "Pass", "evidence": "Param Integrity: Verified 'm_refund_id' (External) maps to 'trans_id' (Internal) within the 'CreateRefundRequest'. Parameter naming is consistent between Refund Core and FMC/PE layers as per Architecture v2 standards.", "severity": "Low" },
+    { "row_index": 8, "status": "Pass", "evidence": "Double-Submit Guard: FMC/PE implements an idempotency check on 'm_refund_id' from Refund Core. If the 'trans_id' has a successful 'REFUNDED' status in the PE order engine, subsequent calls are rejected with 'ALREADY_EXISTS'.", "severity": "Low" },
+    { "row_index": 11, "status": "Flag", "evidence": "Latency Performance: The synchronous gRPC call from Refund Core to FMC for single payment refunds is susceptible to latency spikes when FMC validates against AEv2. P99 latency peaks can cause the 'CreateRefund' connection to time out, impacting Refund Core's retry budget.", "severity": "Medium" },
+    { "row_index": 13, "status": "Pass", "evidence": "Context Preservation: The 'OrderContext' in PE preserves the 'app_id', 'm_refund_id', and 'event_code' metadata received from Refund Core through to the final ZAS ledger posting.", "severity": "Low" },
+    { "row_index": 21, "status": "Pass", "evidence": "Adaptive APIs: gRPC response codes (OK, FAILED_PRECONDITION, ABORTED) are used to signal business vs. system errors to Refund Core. Specifically, 'REFUND_AMOUNT_INVALID' maps to FAILED_PRECONDITION.", "severity": "Low" },
+    { "row_index": 29, "status": "Pass", "evidence": "Processing States: The Refund Order Engine uses the 'Saga Pattern' with explicit 'INIT', 'PROCESSING', and 'FINAL_PENDING' states, providing Refund Core with precise status visibility of the single payment refund progress.", "severity": "Low" },
+    { "row_index": 33, "status": "Pass", "evidence": "Money States: PE distinguishes between 'fund_amount' and 'promotion_amount' in the gRPC message from Refund Core, enabling granular fund-movement reversal.", "severity": "Low" },
+    { "row_index": 37, "status": "Pass", "evidence": "Ledger Mapping: Every refund transaction submitted by Refund Core triggers a mandatory ledger event in ZAS via PE/AE. Atomic sync between AE fund movement and ZAS postings was verified via gRPC trace.", "severity": "Low" },
+    { "row_index": 51, "status": "Fail", "evidence": "Data Freshness: Refund Core -> FMC orchestration for single payment refunds retrieves the transaction context but FMC fails to perform a mandatory 'Stale-check' on the 'Adjusted' (Hiệu chỉnh) timestamp before AEv2 execution. This creates a fund-loss risk if a concurrent refund is processed via a legacy tool.", "severity": "High" },
+    { "row_index": 53, "status": "Flag", "evidence": "Error Specificity: If AEv2 returns an 'UNKNOWN' status during a single payment refund, FMC maps this to a generic 'INTERNAL_ERROR' (Code 10) in the gRPC response to Refund Core, masking the transient nature of the failure.", "severity": "Medium" },
+    { "row_index": 56, "status": "Pass", "evidence": "Idempotency: Re-confirmed 'm_refund_id' as the unique key for de-duplication in the FMC Order Repository, ensuring 'System-as-Actor' safety for the Refund Core service.", "severity": "Low" },
+    { "row_index": 60, "status": "Pass", "evidence": "Support Context: 'X-Correlation-ID' is strictly propagated in the gRPC context from Refund Core to FMC, AEv2, and ZAS, enabling end-to-end technical traceability.", "severity": "Low" }
+  ],
+  "summary": {
+    "squad_product": "Payment Core / Single Payment Refund Flow",
+    "reviewer": "Gemini (System-as-Actor Audit)",
+    "date": "21 May 2026",
+    "scope": "Technical audit of the Single Payment Refund orchestration within Payment Core from a system-as-actor perspective. Treated FMC/PE as the product and Refund Core as the primary user service. Verified gRPC interactions, state transitions, and ledger synchronization between Refund Core, FMC, PE, AEv2, and ZAS.",
+    "key_risks": "1. [Critical] Fund-loss risk due to missing 'Adjusted' timestamp validation in Refund Core-to-FMC refund orchestration (Row 51). 2. [Medium] Latency bottleneck in synchronous gRPC calls between Refund Core and FMC (Row 11). 3. [Medium] Broad 'UNKNOWN' error mapping masking transient AEv2 timeouts for the Refund Core service (Row 53).",
+    "high_severity": "Row 51 (Data Freshness): The system fails to validate the 'Adjusted' timestamp (Stale-check) when Refund Core initiates a single payment refund. This is a critical technical misalignment with Zalopay Corev2 standards and presents a fund-loss risk from concurrent refund actions.",
+    "med_severity": "1. Synchronous dependency on FMC for refund execution creates a latency bottleneck that can exceed Refund Core's gRPC deadlines. 2. Failure to propagate granular 'Retryable' hints when AEv2 returns 'UNKNOWN' prevents Refund Core from executing efficient recovery logic.",
+    "low_severity": "1. Robust idempotency enforcement via 'm_refund_id'. 2. Precise state machine transitions in the Refund Order Engine. 3. Strong param integrity between Refund Core and FMC/PE layers.",
+    "next_steps": "1. [Urgent] Implement mandatory 'Adjusted' timestamp validation in the FMC refund execution path for Refund Core requests. 2. [Q3] Optimize gRPC deadlines and implement asynchronous status polling for long-running refunds. 3. [Q4] Map AEv2 timeouts to a specific 'RETRY_ABLE' gRPC code in the FMC response.",
+    "questions": "1. Is the ZAS ledger posting for refunds idempotent based on the original 'm_refund_id' from Refund Core? 2. How does FMC handle the case where Refund Core sends a refund amount that exceeds the remaining capturable balance of the single payment?"
+  }
+}

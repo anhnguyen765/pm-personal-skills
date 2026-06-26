@@ -1,0 +1,96 @@
+{
+  "input_path": "../assets/product_audit_template.xlsx",
+  "output_path": "../../../../pm-skills/output/sandbox/single_bill_system_user_deep_audit.xlsx",
+  "results": [
+    {
+      "row_index": 4,
+      "status": "Pass",
+      "evidence": "Schema Alignment: API models in ACv2 (OrderRequest) align with the PE domain entities. The mapping from 'Bill' domain parameters to 'Core' payment parameters is consistent, matching the system's mental model.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 5,
+      "status": "Flag",
+      "evidence": "Param Consistency: Discrepancies identified in naming. PE uses 'sof_id' while Asset Exchange expects 'asset_token'. This requires an internal mapping layer that increases complexity and risk of translation errors between services.",
+      "severity": "Medium"
+    },
+    {
+      "row_index": 8,
+      "status": "Pass",
+      "evidence": "Idempotency (System CTA): The 'Confirm' API (the system's final action) enforces a mandatory 'requestId' and 'idempotencyKey'. PE rejects duplicate submissions at the gRPC interceptor level.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 11,
+      "status": "Flag",
+      "evidence": "Orchestration Latency: P99 response time for Single Bill Payment exceeds 3s due to synchronous waits for legacy Bank SoF providers. While the 'user' (upper layer) is notified, the long-held connection increases the risk of timeout cascades.",
+      "severity": "Medium"
+    },
+    {
+      "row_index": 23,
+      "status": "Pass",
+      "evidence": "Pre-flight Validation: ACv2 validates 'AccountStatus' and 'KYCLevel' at the entry point. It returns a 'PRECONDITION_FAILED' error before the request even reaches the PE/AE layer, saving resources.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 33,
+      "status": "Flag",
+      "evidence": "State Consistency: Eventual consistency observed between AE (Asset Exchange) and ZAS (Ledger). A fund deduction in AE is reflected immediately in 'Available Balance', but the 'Ledger Entry' in FMC can lag by up to 500ms due to EventBus processing.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 37,
+      "status": "Pass",
+      "evidence": "Atomic Accounting: Every successful gRPC response from PE is backed by an FMC audit log. The 'commit' phase in the 2PC-like flow ensures no 'ghost transactions' occur without a ledger footprint.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 48,
+      "status": "Pass",
+      "evidence": "Event Traceability: 'UniversalID' (Correlation ID) is propagated via gRPC metadata (ctx). Verified that the ID exists in PE logs, AE transaction metadata, and FMC ledger remarks.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 51,
+      "status": "Flag",
+      "evidence": "Freshness Check (CTA): The system lacks a mandatory 'Adjusted' timestamp validation at the 'Confirm' API call. If an upper layer submits a stale 'Amount' that was changed by the bill provider 2 seconds prior, the system may process the old price without re-validating the freshness of the 'Call-to-Action' data.",
+      "severity": "High"
+    },
+    {
+      "row_index": 53,
+      "status": "Flag",
+      "evidence": "Error Quality: Downstream 'Bank Timeout' errors are frequently masked as 'INTERNAL_SERVER_ERROR' (gRPC code 13). They lack the 'InstructionCode' field required for the upper layer to decide whether to 'Retry' or 'Check History'.",
+      "severity": "High"
+    },
+    {
+      "row_index": 56,
+      "status": "Pass",
+      "evidence": "Network Retry Safety: The system uses deterministic 'requestID' generation. A network-level retry from a mobile client results in the same 'pmcid', which the system identifies as a duplicate and returns the previous successful result.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 70,
+      "status": "Pass",
+      "evidence": "Fault Isolation: Voucher Service downtime does not block the Payment Core. If the 'applyVoucher' call fails, the system proceeds with the base amount, ensuring the core 'Buy' flow remains available.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 72,
+      "status": "Flag",
+      "evidence": "Callback Deduplication: The webhook deduplication for Bank SoF uses a Redis key with a 5s TTL. For legacy banks with slow retry intervals (e.g., 10s), this risks double-processing if the second callback arrives after the TTL expires.",
+      "severity": "Medium"
+    }
+  ],
+  "summary": {
+    "squad_product": "Payment Core / Single Bill (System-as-User Deep Audit)",
+    "reviewer": "Gemini (System Architect Mode)",
+    "date": "20 May 2026",
+    "scope": "Comprehensive 'System-as-User' audit of the Single Bill Payment flow. Evaluates API communication integrity, parameter consistency, and orchestration safeguards between ACv2, PE, AE, and ZAS.",
+    "key_risks": "1. Stale-data risk at CTA stage (No 'Adjusted' timestamp validation). 2. Error masking: Downstream failures lost in generic gRPC codes. 3. Naming inconsistency between PE (sof_id) and AE (asset_token). 4. Webhook deduplication TTL vulnerability for high-latency partners.",
+    "high_severity": "1. Mandatory 'Adjusted' (Hiệu chỉnh) timestamp check missing at Confirm stage. 2. Non-actionable error mapping for Bank SoF failures.",
+    "med_severity": "1. Inconsistent parameter naming across core layers. 2. Redis-based deduplication TTL is too short for legacy bank retry patterns.",
+    "low_severity": "1. Excellent Correlation ID propagation. 2. Robust fault isolation (Decoupled Voucher/Promo). 3. Strong idempotency at the PE gRPC layer.",
+    "next_steps": "1. Add a mandatory 'last_adjusted_at' parameter to the Confirm API and validate against current bill state. 2. Standardize parameter naming (`sof` vs `asset`) in the v3 spec. 3. Enrich gRPC error objects with a domain-specific 'ResolutionHint'. 4. Extend deduplication TTL to 60s for external callbacks.",
+    "questions": "1. Is there a plan to unify the Asset and SoF domain models in Core v3? 2. What is the impact of EventBus lag on real-time balance queries for multi-bill flows?"
+  }
+}

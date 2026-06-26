@@ -1,0 +1,102 @@
+{
+  "input_path": "/Users/lap14569/jora/.gemini/skills/product-audit/assets/product_audit_template.xlsx",
+  "output_path": "/Users/lap14569/jora/pm-skills/output/sandbox/nexnow_technical_audit.xlsx",
+  "results": [
+    {
+      "row_index": 5,
+      "status": "Flag",
+      "evidence": "NexNOW uses 'Session ID' for idempotency and reconciliation (Slide 7, 10), whereas Payment Core standards (team-context.md) mandate 'requestId' for the PE layer. Potential naming inconsistency for internal integration.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 7,
+      "status": "Pass",
+      "evidence": "Clear logical grouping of Transfer, Payment, and Enablement categories (Slide 4). System-as-user services are segmented logically.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 11,
+      "status": "Pass",
+      "evidence": "Real-time fund transfer (Slide 5) with defined timeout handling. 'Early Refund' (Slide 7) reduces wait time for failed transactions.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 14,
+      "status": "Pass",
+      "evidence": "MDP proactively synchronizes timeout states (Slide 7), allowing calling systems (TCTV) to resume/update state without manual intervention.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 25,
+      "status": "Pass",
+      "evidence": "Two-way inquiry (Sender/Receiver) mandated by Circular 30/2024 (Slide 7) ensures high trust before confirmation.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 29,
+      "status": "Flag",
+      "evidence": "'Early Refund' mechanism (Slide 7) triggers immediately on timeout. Requires strict orchestration safety to prevent double-payout if the 'timeout' transaction eventually reaches a terminal success state at the partner bank.",
+      "severity": "Medium"
+    },
+    {
+      "row_index": 36,
+      "status": "Pass",
+      "evidence": "Settlement timeline and next steps (IBPS netting) clearly mapped in Slide 14-16.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 37,
+      "status": "Pass",
+      "evidence": "Ledger mapping via Netting Position (Step 3) and IBPS settlement (Step 5) documented in Slide 14-16.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 47,
+      "status": "Pass",
+      "evidence": "5-state lifecycle (ACPT, RJCT, DNID, TOUT, EXPR) provides unambiguous result states for calling services (Slide 9).",
+      "severity": "Low"
+    },
+    {
+      "row_index": 48,
+      "status": "Pass",
+      "evidence": "Session ID (Mã phiên) serves as the universal key for transactions, reconciliation, and settlement (Slide 7, 10).",
+      "severity": "Low"
+    },
+    {
+      "row_index": 53,
+      "status": "Pass",
+      "evidence": "Error states are granular: DNID (Business Denied), RJCT (Technical Reject), EXPR (Expired), TOUT (Timeout).",
+      "severity": "Low"
+    },
+    {
+      "row_index": 56,
+      "status": "Pass",
+      "evidence": "Session ID ensures 100% data matching and guards against duplicate processing (Slide 7).",
+      "severity": "Low"
+    },
+    {
+      "row_index": 66,
+      "status": "Flag",
+      "evidence": "Report exchange relies on sFTP (Slide 17). While secure, it introduces higher latency compared to real-time Webhooks/APIs for large-scale TCTV operations.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 72,
+      "status": "Pass",
+      "evidence": "Unique Session ID per transaction ensures idempotency across retries and settlement (Slide 7, 10).",
+      "severity": "Low"
+    }
+  ],
+  "summary": {
+    "squad_product": "Payment Core / NexNOW v1.0",
+    "reviewer": "Gemini CLI (Audit Skill)",
+    "date": "20 May 2026",
+    "scope": "NexNOW v1.0 real-time A2A fund transfer flow, including lifecycle, settlement, and reporting.",
+    "key_risks": "1. Idempotency naming mismatch (Session ID vs requestId). 2. Early Refund double-payout risk. 3. sFTP reporting latency.",
+    "high_severity": "None identified. The system design is robust with 5-state lifecycle and proactive sync.",
+    "med_severity": "Orchestration safety for 'Early Refund': ensure 'timeout' state at partner is truly terminal before refunding.",
+    "low_severity": "Parameter naming consistency (Session ID vs requestId); Transition from sFTP to API-based reporting.",
+    "next_steps": "1. Standardise naming to 'requestId'. 2. Define technical safety for Early Refund orchestration. 3. Explore API-based report fetch.",
+    "questions": "Will the 'Early Refund' be supported for all TCTVs or only select ones with low-latency status APIs?"
+  }
+}

@@ -1,0 +1,186 @@
+--- Top 1 Results ---
+
+SOURCE: [FX] BE technical specs (ID: 261519450)
+--------------------
+none1. System overviewFX Management is a service used to store and retrieve foreign exchange (FX) rates used in payment transactions involving currency conversions. It is designed to support integration with other payment providers that don't offer dynamic FX quotations.Note: This service can expose external public API for other systems to integrate and get currency exchange rates from the Zalopay system.1.1 PurposeProvide centralized FX rate management for payment processingEnable reliable currency conversion capabilitiesSupport third-party integrations with standardized APIsEnsure cost-effective and highly available FX rate services1.2 ScopeReal-time and historical rate queriesExternal provider integrationAudit and compliance logging2. ObjectivesEnable storing (inserting) FX ratesProvide reliable APIs to retrieve FX rates based on appId and currency pair.Minimize external provider costs through intelligent cachingEnsure high availability despite external provider limitationsMaintain audit trails for compliance and monitoring3. Requirement and Implementation3.1 System requirement specification (SRS)Functional Requirements:The system must provide the latest exchange rate for the requested currency pair.The system shall allow authorized users to insert exchange rate.The system don't allow user update exchange rate over 10% compare to old state.The system shall automatically fetch provider quotes every 10 minutes. (future feature)The system shall notify admins if provider data is not updated for 1 hour. (future feature)Non-Functional Requirements:PerformanceThe exchange rate query API shall respond within 300 milliseconds under normal loadThe system shall handle up to 30 concurrent requests per secondSupport up to 2 million requests per dayCache hit ratio should be > 95%AvailabilityThe system shall be available 24/7 with 99.99% SLAImplement graceful degradation when external providers are unavailable ( can use the latest FX Rate of the last day based the agreement of OP and business). Almost zero-downtime deployment capabilityScalabilityHorizontal scaling supportDatabase read replicas for query optimizationLoad balancing across multiple instancesCompliance & AuditingThe system must log all insert operations for auditingMaintain compliance with financial regulationsData retention policies for historical records3.2 Problem AnalysisExternal Provider Challenges:The external FX service costs $0.01 per callThe service has only 99% availability rateNeed to minimize costs while maintaining service qualitySolutions:Implement aggressive caching strategiesUse circuit breaker patterns for resilience (potential)Implement retry mechanisms with exponential backoff ( potential) Create fallback mechanisms for high availability3.3. Availabilty and Downtime estimates4. High Level designInteractive Diagram - Level 0falseHigh level designA9Y1oBTwYRO-JE3eFpIhtrue700a4e7df8c1c120dbdfa39dd6407f291134f4dd7ceautotopfalse8816Interactive Diagram - Level 1falseUntitled Diagramtrueautotopfalse77125. Sequence DiagramGetFXRate by AppID - FMCINLINE<![CDATA[@startuml
+
+skinparam ActorBackgroundColor #F7B499
+skinparam ActorBorderColor #F590A8
+skinparam ParticipantBackgroundColor #DAE8FC
+skinparam ParticipantBorderColor #6C8EBF
+skinparam CollectionsBackgroundColor #DAE8FC
+skinparam CollectionsBorderColor #6C8EBF
+skinparam EntityBackgroundColor #DAE8FC
+skinparam EntityBorderColor #6C8EBF
+skinparam DatabaseBackgroundColor #C4F596
+skinparam DatabaseBorderColor #92F238
+
+title Query by AppID
+
+autonumber
+
+actor AC as "AC service"
+participant ClientAuth as "ClientAuthentication"
+participant Logging as "LoggingServerInterceptor"
+participant Controller as "FXGrpcController"
+participant Service as "StdFXService"
+participant CacheRepo as "FXCacheAsideRepository"
+participant RedisRepo as "RedisFXCacheRepository"
+participant JdbcRepo as "JdbcFXRepository"
+
+AC ->> ClientAuth: gRPC GetFXRate(appId, currencyPair)
+ClientAuth ->> Logging: pass if authenticated
+Logging ->> Controller: pass request
+Controller ->> Service: getLatestFxRateByAppId(cmd)
+Service ->> CacheRepo: getCurrencyProvider(appId, currencyPair)
+CacheRepo ->> RedisRepo: getCurrencyProvider(appId, currencyPair)
+RedisRepo -->> CacheRepo: CurrencyProvider? (cache hit/miss)
+alt Cache miss
+    CacheRepo ->> JdbcRepo: getCurrencyProvider(appId, currencyPair)
+    JdbcRepo -->> CacheRepo: CurrencyProvider
+end
+CacheRepo -->> Service: CurrencyProvider
+
+Service ->> CacheRepo: getLatestFXRateByCurrencyProvider(currencyProvider)
+CacheRepo ->> RedisRepo: getLatestFXRateByCurrencyProvider(currencyPair, providerId)
+RedisRepo -->> CacheRepo: FXRate? (cache hit/miss)
+alt Cache miss
+    CacheRepo ->> JdbcRepo: getLatestFXRateByCurrencyProvider(currencyPair, providerId)
+    JdbcRepo -->> CacheRepo: FXRate
+end
+CacheRepo -->> Service: FXRate
+
+Service -->> Controller: FXRate with provider information
+Controller -->> Logging: build and return GetFXRateResponse
+Logging -->> ClientAuth: response
+ClientAuth -->> AC: response
+
+@enduml]]>Create FX Rate -  Admin (Merchant)INLINE<![CDATA[@startuml
+
+skinparam ActorBackgroundColor #F7B499
+skinparam ActorBorderColor #F590A8
+skinparam ParticipantBackgroundColor #DAE8FC
+skinparam ParticipantBorderColor #6C8EBF
+skinparam CollectionsBackgroundColor #DAE8FC
+skinparam CollectionsBorderColor #6C8EBF
+skinparam EntityBackgroundColor #DAE8FC
+skinparam EntityBorderColor #6C8EBF
+skinparam DatabaseBackgroundColor #C4F596
+skinparam DatabaseBorderColor #92F238
+
+title Create FX Rate
+
+autonumber
+
+actor Merchant as "Merchant"
+participant ClientAuth as "ClientAuthentication"
+participant Logging as "LoggingServerInterceptor"
+participant Controller as "FXGrpcController"
+participant Validation as "Validation"
+participant Service as "StdFXService"
+participant Idempotency as "IdempotencyManager"
+participant Repo as "FXCacheAsideRepository"
+participant Threshold as "RateThresholdValidator"
+participant JdbcRepo as "JdbcFXRepository"
+
+Merchant ->> ClientAuth: gRPC CreateFXRate(request)
+ClientAuth ->> Logging: pass if authenticated
+Logging ->> Controller: pass request
+Controller ->> Validation: validate CreateFX request(currency, fxRate, Date, etc.)
+Validation -->> Controller: validation result (fail=error, pass=continue)
+alt Validation failed
+    Controller -->> Logging: error response
+    Logging -->> ClientAuth: error response
+    ClientAuth -->> Merchant: error response
+else Validation passed
+    Controller ->> Service: createFXRate(requestId, cmd)
+    Service ->> Idempotency: executeIdempotent(cmd, requestId, ...)
+    alt Duplicate request
+        Idempotency -->> Service: previous result
+        Service -->> Controller: idempotent result
+    else New request
+        Idempotency ->> Service: proceed
+        Service ->> Repo: getProvider(providerId)
+        Repo -->> Service: Provider or error
+        Service ->> Repo: getCurrencyProvider(currencyPair, providerId)
+        Repo -->> Service: CurrencyProvider or create new
+        Service ->> Threshold: **validateFXRate exceed bound (current 10%)?
+        Threshold -->> Service: pass or error
+        Service ->> Repo: insertFXRate(fxRate)
+        Repo ->> JdbcRepo: insertFXRate(fxRate)
+        JdbcRepo -->> Repo: fxRateId
+        Repo -->> Service: fxRateId
+        Service ->> Repo: updateExistedCurrencyProviderWithFxRate(currencyProvider, fxRateId)
+        Repo ->> JdbcRepo: updateCurrencyProviderWithFxRate
+        JdbcRepo -->> Repo: update result
+        Repo -->> Service: update result
+        Service -->> Idempotency: result
+        Idempotency -->> Service: result
+        Service -->> Controller: CreateFXResult
+    end
+    Controller -->> Logging: build and return CreateFXRateResponse
+    Logging -->> ClientAuth: response and clear MDC
+    ClientAuth -->> Merchant: response
+end
+
+@enduml]]>Get List FX RateINLINE@startumlskinparam ActorBackgroundColor #F7B499skinparam ActorBorderColor #F590A8skinparam ParticipantBackgroundColor #DAE8FCskinparam ParticipantBorderColor #6C8EBFskinparam CollectionsBackgroundColor #DAE8FCskinparam CollectionsBorderColor #6C8EBFskinparam EntityBackgroundColor #DAE8FCskinparam EntityBorderColor #6C8EBFskinparam DatabaseBackgroundColor #C4F596skinparam DatabaseBorderColor #92F238title List FX Rates (Paginated)autonumberactor Merchant as "Merchant"participant ClientAuth as "ClientAuthentication"participant Logging as "LoggingServerInterceptor"participant Controller as "FXGrpcController"participant Service as "StdFXService"participant CacheRepo as "FXCacheAsideRepository"participant JdbcRepo as "JdbcFXRepository"Merchant ->> ClientAuth: gRPC ListFXRate(page, filters)ClientAuth ->> Logging: pass if authenticatedLogging ->> Controller: pass requestController ->> Service: getListFXRate(cmd)Service ->> CacheRepo: getListFXRateWithProvider(cmd)CacheRepo ->> JdbcRepo: getListFXRateWithProvider(cmd)JdbcRepo -->> CacheRepo: PageResult<FXRateWithProvider>CacheRepo -->> Service: PageResult<FXRateWithProvider>Service -->> Controller: PageResult<FXRateResult>Controller -->> Logging: build and return ListFXRateResponseLogging -->> ClientAuth: response and clear MDCClientAuth -->> Merchant: response6. Database designtruefx_ratefalseautotoptrue1111267. Hands-on tutorials7.1. Client integrationAny gRPC client calling the FX Management service must include the following metadata header in every request. If this header is missing or contains an invalid value, the request will be rejected with a unauthenticated error ( Status Code: 16) 7.2. Important NotesFor fast supporting UAT  integration in 14/07 (current status: enabled), authentication for health check calls is temporarily excluded in the SANDBOX environment to facilitate testing.However, authentication for health check calls is enabled and enforced in the STG (Staging) and PROD (Production) environments to ensure security and proper monitoring.7.3. Authentication Info by EnvironmentThe authentication for each environmentEnvironmentClient NameClient IDClient Secret / KeyNotesSandboxFund Movement Corefmc-serviceirrnaspA2Xktzl9-taTUnjl7Kw5WFSdRQhFw7wz-tXMTemporary allow to use all APIsMerchant Platformmcpf-serviceR4jvFIV9iwqa-0g9jE0Kj2ic5n4xpXrAZZiPy6p5xuQTemporary allow to use all APIsQR Productqr-product-servicejERuGQB1w6CTRNa1ev3pTrf4h7JFqhDMe3BXZ6UZMm7aTemporary allow to use all APIsStagingFund Movement Corefmc-servicecontact PC team (hoangna)Temporary allow to use all APIsMerchant Platformmcpf-servicecontact PC team (hoangna)Temporary allow to use all APIsQR Productqr-product-servicecontact PC team (hoangna)Temporary allow to use all APIsDrsiteFund Movement Corefmc-servicecontact PC team (hoangna)Temporary allow to use all APIsMerchant Platformmcpf-servicecontact PE team (hoangna)Temporary allow to use all APIsProductionFund Movement Corefmc-servicecontact PE team (hoangna)Temporary allow to use all APIsMerchant Platformmcpf-servicecontact PE team (hoangna)Temporary allow to use all APIsQR Productqr-product-servicecontact PC team (hoangna)Temporary allow to use all APIs7.4. Proto && ProtocolsNote: For staging, drsite, production. You must allow namespace network before calling to our services.Proto*.protoGrpcQC (Sandbox)layer4 Gateway: qcgrpc-fx-management.zalopay.vn:443layer7:  fx-management-lb-l7.pe-provider-qc:9090Stagingfx-management-lb-l7.pe-provider-staging:9090Drsitefx-management-lb-l7.pe-provider-drsite:9090Production fx-management-lb-l7.pe-provider-production:9090HttpQC (Sandbox)https://socialdev.zalopay.vnStaginghttps://socialstg.zalopay.vnProductionhttps://social.zalopay.vn7.5. API Description7.5.1. Provider APIs7.5.1.1.ProviderFieldTypeMandatoryDescriptionprovider_idstringYesUnique ID of the providerprovider_namestringYesName of the providercreated_atstringYesCreation timestamp (ISO8601)updated_atstringYesLast update timestamp (ISO8601)7.5.1.2. CreateProviderCreateProviderRequestFieldTypeMandatoryDescriptionNoteprovider_idstringYesUnique ID of the providerprovider_namestringYesName of the providerMust be unique across the ZaloPay systemCreateProviderResponseFieldTypeMandatoryDescriptionreturn_codeReturnCodeYesReturn status of the response7.5.1.3. UpdateProviderUpdateProviderRequestFieldTypeMandatoryDescriptionprovider_idstringYesUnique ID of the providerprovider_namestringYesUpdated name of the providerUpdateProviderResponseFieldTypeMandatoryDescriptionreturn_codeReturnCodeYesReturn status of the response7.5.1.4. ListproviderListProviderRequestFieldTypeMandatoryDescriptionNotepage_numberint32YesCurrent page numberMust be greater than or equal to 1.If a value less than 1 is provided, the system will default to 1page_sizeint32YesNumber of items per pageMust be greater than or equal to 1 and less than or equal to 100.If a value is out of range (< 1 or > 100), it will default to 20.ListProviderResponseFieldTypeMandatoryDescriptionreturn_codeReturnCodeYesReturn status of the responseprovidersList<>YesList of provider recordspaginationPaginationMetaDataYesMetadata for pagination7.5.2. Merchant APIs7.5.2.1.MerchantFieldTypeMandatoryDescriptionapp_idstringYesID of the application (merchant)currency_pairstringYesCurrency pair assigned to merchantprovider_idstringYesAssigned FX provider for this paircreated_atstringYesCreation timestamp (ISO 8601 format)updated_atstringYesLast update timestamp (ISO 8601 format)7.5.2.2. CreateMerchantCreateMerchantRequestFieldTypeMandatoryDescriptionapp_idstringYesID of the application (merchant)currency_pairstringYesFormat: {base_currency}/{quote_currency} using ISO 4217 codesprovider_idstringYesID of the FX provider associated with this merchantCreateMerchantResponseFieldTypeMandatoryDescriptionreturn_codeReturnCodeYesReturn status of the response7.5.2.3. UpdateMerchantUpdateMerchantRequestFieldTypeMandatoryDescriptionapp_idstringYesID of the application (merchant)currency_pairstringYesFormat: {base_currency}/{quote_currency} using ISO 4217 codesprovider_idstringYesID of the FX provider associated with this merchantUpdateMerchantResponseFieldTypeMandatoryDescriptionreturn_codeReturnCodeYesReturn status of the response7.5.2.4. ListMerchantListMerchantRequestFieldTypeMandatoryDescriptionNotepage_numberint32YesCurrent page numberMust be greater than or equal to 1.If a value less than 1 is provided, the system will default to 1page_sizeint32YesNumber of items per pageMust be greater than or equal to 1 and less than or equal to 100.If a value is out of range (< 1 or > 100), it will default to 20.ListMerchantResponseFieldTypeMandatoryDescriptionreturn_codeReturnCodeYesReturn status of the responsemerchantsList<>YesList of merchant recordspaginationPaginationMetaDataYesMetadata for pagination7.5.3. FXRate APIs7.5.3.1.FXRateFieldTypeDescriptionfx_rate_idint64Unique ID of the FX ratecurrency_pairstringFormat: {base_currency}/{quote_currency} using ISO 4217 codesrate_valuestringExchange rate valuebase_currencystringBase currency (ISO 4217 code)provider_idstringFX provider IDbase_unitstringAmount in base currency that rate_value refers todescriptionstringDescription of the ratevalid_fromstringTime the rate becomes effective (ISO 8601 format)valid_untilstringTime the rate expires (ISO 8601 format)created_bystringCreator of the rate7.5.3.2.FXRateItemFieldTypeDescriptionfx_rate_idint64Unique ID of the FX ratecurrency_pairstringFormat: {base_currency}/{quote_currency} using ISO 4217 codesrate_valuestringExchange rate valuebase_currencystringBase currency (ISO 4217 code)provider_idstringFX provider IDbase_unitstringAmount in base currency that rate_value refers todescriptionstringDescription of the ratevalid_fromstringTime the rate becomes effective (ISO 8601 format)valid_untilstringTime the rate expires (ISO 8601 format)created_bystringCreator of the rateis_activeboolWhether the rate is currently activecreated_atstringTime the rate was created (ISO 8601 format)updated_atstringTime the rate was last updated (ISO 8601 format)7.5.3.3.CreateFXRateCreateFXRateRequestFieldTypeMandatoryDescriptionrequest_idstringYesUnique request ID for idempotencycurrency_pairstringYesFormat: {base_currency}/{quote_currency} using ISO 4217 codesprovider_idstringYesID of the FX providercreated_bystringYesIdentifier of the user/system creating the raterate_valuestringYesExchange rate value (up to 15 decimals)valid_fromstringYesTime the rate becomes effective (ISO 8601 format, e.g., 2020-01-01)valid_untilstringNoOptional. Time the rate expires (ISO 8601 format)base_currencystringNoISO 4217 code of the base currencybase_unitstringNoAmount in base currency the rate_value refers todescriptionstringNoOptional description7.1.3.4. CreateFXRateResponseFieldTypeMandatoryDescriptionreturn_codeReturnCodeYesReturn status of the responsefx_rate_idint64YesUnique ID of the newly created rate7.5.3.4.GetFXRateById (MCPF)GetFXRateByIdRequestFieldTypeMandatoryDescriptionfx_rate_idint64YesUnique ID of the FX rateGetFXRateResponseFieldTypeMandatoryDescriptionreturn_codeReturnCodeYesReturn status of the responsefx_rateYesFX rate details7.5.3.5.GetFXRate (FMC)GetFXRateRequestTypeMandatoryDescriptionapp_idstringYesID of the merchant requesting the FX ratecurrency_pairstringYesFormat: {base_currency}/{quote_currency} using ISO 4217 codesGetFXRateResponseFieldTypeMandatoryDescriptionreturn_codeReturnCodeYesReturn status of the responsefx_rateYesFX rate details7.5.3.6. ListFXRateListFXRateRequestFieldTypeMandatoryDescriptionNotepage_numberint32YesCurrent page numberMust be greater than or equal to 1.If a value less than 1 is provided, the system will default to 1page_sizeint32YesNumber of records per pageMust be greater than or equal to 1 and less than or equal to 100.If a value is out of range (< 1 or > 100), it will default to 20.created_fromstringNoFilter rates created after this date (ISO 8601 format)created_tostringNoFilter rates created before this date (ISO 8601 format)currency_pairstringNoFilter by currency pairprovider_idstringNoFilter by FX provider IDListFXRateResponseFieldTypeMandatoryDescriptionreturn_codeReturnCodeYesReturn status of the responsefx_ratesList<>YesList of FX rate entriespaginationPaginationMetaDataYesPagination metadata7.5.4 Http API7.5.4.1 getFxRateRead more here: currency_pair: The two currencies involved in the exchange rate.rate_value: The amount of the quote currency that equals one unit (or the specified base_unit) of the base currency.base_currency: The primary currency used as the reference for conversion (the first currency in the currency_pair).base_unit: The quantity of the base currency used as the basis for calculating the exchange rate. Singapore: SGD/VNDChina: CNY/VNDKorean: KRW/VNDMalaysia: MYR/VNDExamplecurrency_pair: USD/VNDrate_value: 24.000base_currency: USDbase_unit: 1In this example, it means:1 USD = 24.000 VNDRequest:Path: /fx/api/v1/rate/currencyParamTypeMandatoryDescriptioncurrency_pairstringYesFormat: {base_currency}/{quote_currency} using ISO 4217 codesExample:https://socialdev.zalopay.vn/fx/api/v1/rate/currency?currency_pair=CNY%2FVNDcurrency_pair: CNY/VNDResponse:FieldTypeMandatoryDescriptionreturn_codestringYesReturn status of the responsemessagestringYesDetailed reason for the errorcodestringyesError code when it occursdataFXRateYesFX rate detailsStatus codeDetail200Get fx rate success: return_code: OK404Fx rate not found:return_code: NOT_FOUND400The request does not have a parameter or the parameter is blankreturn_code:  INVALID_ARGUMENT500Internal errorreturn_code:  INTERNAL_ERROR429Ratelimit:message: ZLP Too many requests405Method not allowedExample{    "return_code": "OK",     "code": "SUCCESS",     "message": "OK",     "data": {         "fx_rate_id": 489,         "currency_pair": "CNY/VND",         "rate_value": "3650.000000000000000",         "base_currency": "",         "base_unit": ""     }}7.6. ExampleAPI: GetFXRateRequest<![CDATA[{
+    "app_id": "APP1",
+    "currency_pair": "USD/VND"
+}]]>Response<![CDATA[{
+    "return_code": {
+        "code": "OK",
+        "sub_code": "SUCCESS",
+        "message": "Success"
+    },
+    "fx_rate": {
+        "fx_rate_id": "45",
+        "currency_pair": "USD/VND",
+        "rate_value": "147.123000000000000",
+        "base_currency": "USD",
+        "provider_id": "PROV2",
+        "base_unit": "1",
+        "description": "test",
+        "valid_from": "2025-06-11T00:00Z",
+        "valid_until": "",
+        "created_by": "minhpd2"
+    }
+}]]>API: CreateFXRateRequest<![CDATA[{
+    "request_id": "250626041192531", // idempotency
+    "created_by": "minhpd2",
+    "currency_pair": "USD/VND",
+    "provider_id": "SBV001",
+    "rate_value": "26.075",
+    "valid_from" : "2025-06-11T08:00:00+08:00",
+    "valid_until": "2025-06-11T08:30:00+08:00",
+    "base_currency": "USD",
+    "base_unit": "1",
+    "description": "test"
+}]]>Response<![CDATA[{
+    "return_code": {
+        "code": "OK",
+        "sub_code": "SUCCESS",
+        "message": "Success"
+    },
+    "fx_rate_id": "45"
+}]]>API: CreateproviderRequest<![CDATA[{
+    "provider_id": "PROV1",
+    "provider_name": "minhpd1"
+}]]>Response<![CDATA[{
+    "return_code": {
+        "code": "OK",
+        "sub_code": "SUCCESS",
+        "message": "Success"
+    }
+}]]>API: CreateMerchantRequest<![CDATA[{
+    "app_id": "APP1",
+    "currency_pair": "USD/VND",
+    "provider_id": "PROV1"
+}]]>Response<![CDATA[{
+    "return_code": {
+        "code": "OK",
+        "sub_code": "SUCCESS",
+        "message": "Success"
+    }
+}]]>8. Appendix8.1. ErrorCode8.1.1 Error Code CategoriesSYSTEM: General system errorsIDEMPOTENCY: Idempotency handlingBUSINESS: Business logic errors - adapt with Business analysis.INFRASTRUCTURE: Database, cache, and external service errors8.1.2. Complete Error code MappingsError CodeMessageCategoryRetryableSeverityUNKNOWN_ERRORUnknown errorSYSTEMtrueHIGHSUCCESSSuccessSYSTEMfalseLOWEXCEPTIONExceptionSYSTEMtrueHIGHVALIDATION_ERRORValidation errorBUSINESSfalseLOWIDEMPOTENCY_REQUEST_ID_CONFLICTRequest id already existsIDEMPOTENCYfalseMEDIUMIDEMPOTENCY_KEY_CONFLICTIdempotency key processingIDEMPOTENCYfalseMEDIUMIDEMPOTENCY_REQUEST_CONFLICTRequest conflict with other requestIDEMPOTENCYfalseMEDIUMIDEMPOTENCY_MANAGER_ERRORHandle idempotency errorIDEMPOTENCYfalseHIGHREQUEST_IS_PROCESSINGRequest is processing, please try again laterSYSTEMtrueLOWFX_RATE_NOT_FOUNDFX rate not foundBUSINESSfalseLOWFX_RATE_EXCEEDS_THRESHOLDFX rate change exceeds thresholdBUSINESSfalseMEDIUMFX_RATE_INSERT_FAILEDFailed to insert FX rateSYSTEMfalseHIGHFX_RATE_UNAVAILABLEFX rate is inactive or expiredBUSINESSfalseMEDIUMPROVIDER_NOT_FOUNDProvider not foundBUSINESSfalseLOWAPP_CURRENCY_PAIR_NOT_FOUNDApp currency pair not foundBUSINESSfalseRLOWINVALID_RATE_VALUEInvalid rate valueBUSINESSfalseLOWINVALID_CURRENCY_PAIRInvalid currency pairBUSINESSfalseLOWHASH_GENERATION_FAILEDFailed to generate hashSYSTEMfalseHIGHINSERT_CURRENCY_PROVIDER_FAILEDCreate currency provider failedSYSTEMfalseHIGHUPDATE_CURRENCY_PROVIDER_FAILEDUpdate currency-provider failedSYSTEMfalseHIGHINSERT_PROVIDER_FAILEDCreate provider failedSYSTEMfalseHIGHUPDATE_PROVIDER_FAILEDUpdate provider failedSYSTEMfalseHIGHDUPLICATE_RECORD_FOUNDDuplicate record foundBUSINESSfalseMEDIUMINSERT_MERCHANT_FAILEDCreate merchant using currency provider failedSYSTEMfalseHIGHUPDATE_MERCHANT_FAILEDUpdate merchant using currency provider failedSYSTEMfalseHIGHDATABASE_ERRORDatabase errorINFRASTRUCTUREfalseCRITICALREDIS_ERRORRedis errorINFRASTRUCTUREfalseCRITICALINVALID_DATE_RANGEFrom date must be before to dateBUSINESSfalseLOWINVALID_DATE_FORMATInvalid date formatBUSINESSfalseLOWINVALID_PROVIDER_IDInvalid provider idBUSINESSfalseLOWINVALID_CLIENT_IDInvalid client idAUTHENTICATIONfalseLOWCLIENT_ID_NOT_FOUNDMissing client idAUTHENTICATIONfalseLOW9. Reference documentFX Management: 
+
+========================================

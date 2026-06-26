@@ -1,0 +1,60 @@
+{
+  "input_path": "../assets/product_audit_template.xlsx",
+  "output_path": "../../../../pm-skills/output/reports/normal_payment_technical_audit.xlsx",
+  "results": [
+    {
+      "row_index": 37,
+      "status": "Pass",
+      "evidence": "FMC implements mandatory ledger mapping for all Payment Core events. Verified that 'payment.v2.ConfirmOrder' triggers 'core.EventOrderCompleted' which is consumed by FMC for posting (hạch toán).",
+      "severity": "Low"
+    },
+    {
+      "row_index": 53,
+      "status": "Flag",
+      "evidence": "PE returns 'GRPC_INTERNAL' for some AE failures without a descriptive 'InstructionCode'. Calling services cannot distinguish between retryable and terminal errors without parsing strings.",
+      "severity": "Medium"
+    },
+    {
+      "row_index": 56,
+      "status": "Pass",
+      "evidence": "Idempotency is enforced at the PE entry point using 'requestId'. Subsequent calls to AE and FMC use the same 'pmcid' to ensure atomicity and prevent double deduction.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 69,
+      "status": "Pass",
+      "evidence": "'X-Correlation-ID' is propagated from the Merchant's initial request down to the final FMC ledger event. Verified in logs for 'payment.v2.ConfirmOrder', enabling end-to-end traceability.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 51,
+      "status": "Fail",
+      "evidence": "CTA Stale-Check: The 'ConfirmOrder' API does not strictly validate the 'Adjusted' timestamp of the order. Order updates mid-session may lead to price-mismatch or unexpected state transitions without a refresh.",
+      "severity": "High"
+    },
+    {
+      "row_index": 72,
+      "status": "Flag",
+      "evidence": "Webhook retry logic in PE uses an exponential backoff, but the first retry (5s) is too aggressive for slow merchant systems, potentially causing race conditions if idempotency is weak at the merchant side.",
+      "severity": "Medium"
+    },
+    {
+      "row_index": 67,
+      "status": "Pass",
+      "evidence": "Atomic Sync: 2PC light pattern between AE and FMC. Compensation (refund) is triggered automatically if the ledger posting fails after fund deduction.",
+      "severity": "Low"
+    }
+  ],
+  "summary": {
+    "squad_product": "Payment Core / Normal Payment (Checkout)",
+    "reviewer": "Gemini (System-as-Actor Audit)",
+    "date": "20 May 2026",
+    "scope": "System-level technical audit of the Normal Payment flow (Checkout). Focuses on API orchestration between PE, AE, FMC, and ZAS, emphasizing idempotency, data freshness, and error recovery.",
+    "key_risks": "1. Critical: Missing 'Adjusted' timestamp validation at the 'ConfirmOrder' (CTA) stage. 2. Medium: Lack of domain-specific instruction codes for AE failures. 3. Medium: Aggressive early webhook retries.",
+    "high_severity": "CTA Stale-Check: System executes payment without verifying if the order data has changed since the user last saw it.",
+    "med_severity": "1. Generic gRPC error mapping hinders upper-layer recovery logic. 2. Webhook retry timing needs optimization for external partners.",
+    "low_severity": "1. Robust idempotency via 'requestId' and 'pmcid'. 2. Full Correlation ID propagation. 3. Atomic fund-ledger synchronization.",
+    "next_steps": "1. [Urgent] Implement mandatory 'Adjusted' timestamp check in 'ConfirmOrder' API. 2. Map AE-specific errors to domain InstructionCodes. 3. Adjust webhook backoff strategy to 30s for the first retry.",
+    "questions": "1. Does PE handle 'PARTIAL_SUCCESS' from AE if multiple sources of fund are used? 2. Is there a manual reconciliation path if compensation fails?"
+  }
+}

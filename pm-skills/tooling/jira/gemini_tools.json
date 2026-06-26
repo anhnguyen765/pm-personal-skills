@@ -1,0 +1,57 @@
+[
+  {
+    "name": "get_issue",
+    "description": "Retrieve details of a specific Jira issue by its key (e.g., 'PROJ-123').",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "issue_key": {
+          "type": "string",
+          "description": "The Jira issue key."
+        }
+      },
+      "required": ["issue_key"]
+    }
+  },
+  {
+    "name": "search_issues",
+    "description": "Search for Jira issues using JQL (Jira Query Language).",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "jql": {
+          "type": "string",
+          "description": "The JQL query string."
+        }
+      },
+      "required": ["jql"]
+    }
+  },
+  {
+    "name": "create_issue",
+    "description": "Create a new Jira issue.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "project_key": {
+          "type": "string",
+          "description": "The project key where the issue will be created."
+        },
+        "summary": {
+          "type": "string",
+          "description": "A brief summary of the issue."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the issue."
+        },
+        "issue_type": {
+          "type": "string",
+          "description": "The type of issue (e.g., 'Task', 'Bug', 'Story'). Defaults to 'Task'.",
+          "default": "Task"
+        }
+      },
+      "required": ["project_key", "summary", "description"]
+    }
+  }
+]

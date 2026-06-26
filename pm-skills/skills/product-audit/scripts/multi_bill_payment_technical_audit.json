@@ -1,0 +1,432 @@
+{
+  "input_path": "/Users/lap14569/jora/pm-skills/skills/product-audit/assets/product_audit_template.xlsx",
+  "output_path": "/Users/lap14569/jora/pm-skills/output/reports/multi_bill_payment_technical_audit.xlsx",
+  "results": [
+    {
+      "row_index": 4,
+      "status": "Pass",
+      "evidence": "API Entry Points: ACv2 (Acquiring Core) exposes explicit gRPC endpoints (e.g. '/acquiring.v2.AcquiringService/CreateOrder') for multi-bill checkout. FMC (Fund Movement Core) acts as the central orchestrator, routing checkout requests to downstream services (PE, AE, ZAS, BC, and Billing Services) based on the selected Source of Fund (SoF), adhering to the system-as-actor model.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 5,
+      "status": "Pass",
+      "evidence": "Parameter Integrity: Parameter naming across ACv2, FMC, PE, and AE is consistent, utilizing standard terms like 'app_trans_id', 'zp_trans_id', 'pay_token', and 'sof_id'. No Vietnamese terminology or conflicting fields exist in the API contracts, ensuring smooth service-to-service communication.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 6,
+      "status": "N/A",
+      "evidence": "Search and quick-action widgets are client-side UI features and not applicable to the gRPC API layer of Payment Core.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 7,
+      "status": "Pass",
+      "evidence": "Logical Categorisation: Checkout and payment orchestration logic is decoupled from bill status querying. FMC handles payment state transitions and routing, while billing query interfaces (such as checking bill amount or verification from utility partners) are isolated within billing-specific sub-services, preventing mixing of concerns.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 8,
+      "status": "Pass",
+      "evidence": "Double-Submit Guards: Concurrent checkout attempts for the same multi-bill order are blocked via distributed Redis-based locks on the 'app_trans_id' with a 30-second TTL. The PE Saga Engine locks the 'zp_trans_id' rows in the database to prevent duplicate payment confirmations.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 9,
+      "status": "Pass",
+      "evidence": "Centralised Concept: All transaction legs of a multi-bill order are grouped under a single 'GlobalTransID' in the PE Translog and ZAS. This guarantees that different internal services share a unified ledger concept, despite handling multiple independent or dependent bills.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 10,
+      "status": "N/A",
+      "evidence": "Touch target sizes and spacing are front-end client-side UI layouts and do not apply to the gRPC backend APIs.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 11,
+      "status": "Flag",
+      "evidence": "Latency Bottlenecks: In the multi-bill payment flow, downstream queries to partner billers (e.g. EVN, Viettel) to check live bill statuses during cashier initialization can exceed the default gRPC deadline (5000ms), risking thread pool starvation in FMC during peak billing hours.",
+      "severity": "Medium"
+    },
+    {
+      "row_index": 12,
+      "status": "Pass",
+      "evidence": "Smart Defaults: APIs default to 'VND' currency when omitted. Additionally, if the user's preferred source of fund is not specified, FMC auto-resolves the default SoF based on historical usage logs and balance availability.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 13,
+      "status": "Pass",
+      "evidence": "Context Preservation: Tracing headers ('X-Correlation-ID') and caller context (AppID, Merchant ID, Client ID) are fully propagated across the distributed call stack (ACv2 -> FMC -> PE -> AE -> ZAS).",
+      "severity": "Low"
+    },
+    {
+      "row_index": 14,
+      "status": "Pass",
+      "evidence": "Resumption Capability: The PE Saga Engine (using ProcessingStateHandler) tracks transaction states ('SUBMITTED', 'PROCESSING', 'SUCCESS', 'FAILED'). If a connection drops, calling systems can safely retry the payment with the same 'app_trans_id' to resume execution.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 15,
+      "status": "Pass",
+      "evidence": "Exit Safety: Once a multi-bill payment reaches the 'PROCESSING' status (such as during bank card deduction or provider payout), FMC blocks cancellation requests to prevent race conditions and fund loss. If a transaction leg fails, the Saga engine manages the rollback or partial success state.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 16,
+      "status": "N/A",
+      "evidence": "Marketing banner placements and promotional overlays are client-side concerns and are not managed by core payment backend APIs.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 21,
+      "status": "Pass",
+      "evidence": "API Adaptability: gRPC responses return standardized error codes (e.g. codes.FailedPrecondition for bill already paid, codes.AlreadyExists for duplicate trans IDs) allowing calling systems to adapt their cashier UI flows.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 23,
+      "status": "Pass",
+      "evidence": "Auth Integrity: Service-to-service communication within Payment Core is secured via mutual TLS (mTLS) and token authentication. Public endpoints accessed by merchants require cryptographic signatures calculated using the merchant's secret key.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 24,
+      "status": "Pass",
+      "evidence": "Error Payloads: gRPC errors return structured metadata containing 'ErrorCode', 'InstructionCode' (e.g., RETRY_LATER, CHANGE_SOF), and 'ResolutionHint' to provide actionable guides for calling services.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 25,
+      "status": "Pass",
+      "evidence": "Verification Details: API responses include specific transaction identifiers ('zp_trans_id', 'pay_token', 'balance') and partner reference numbers, supplying complete logging details for tracing.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 26,
+      "status": "Pass",
+      "evidence": "Validation Limits: Multi-bill checkout enforces transaction value limits and daily billing caps at the ACv2 validation layer prior to invoking AE or PE.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 27,
+      "status": "Flag",
+      "evidence": "Freshness Alerts: Cached bill statuses are served to speed up cashier rendering, but there is no real-time alert system to notify support teams if billing provider connections remain unresponsive for more than 1 hour.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 29,
+      "status": "Flag",
+      "evidence": "Orchestration Timeouts: During multi-bill execution, FMC waits synchronously for downstream biller confirmations (under the 'Dependent' billing rule). If the billing partner's API experiences latency, the thread is blocked, risking thread pool starvation in FMC.",
+      "severity": "Medium"
+    },
+    {
+      "row_index": 30,
+      "status": "Pass",
+      "evidence": "Interface Parity: Microservices share the same gRPC Protobuf definitions, ensuring contract alignment and schema consistency across the call stack.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 31,
+      "status": "N/A",
+      "evidence": "Consent dialogs and terms updates are client-side UI configurations. Backend APIs receive pre-authorized tokens and do not manage interactive consent flows.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 32,
+      "status": "Pass",
+      "evidence": "Irreversible Actions: Executing a multi-bill payment requires a double-phase commit (Reserve + Commit) to prevent fund loss, confirming resources are locked before final debiting.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 33,
+      "status": "Pass",
+      "evidence": "Money States: FMC manages distinct balances ('available_balance', 'hold_balance', and 'restricted_balance'). In the BNPL or Paylater flow, the balance is placed on hold ('hold_balance') before being captured, ensuring precise accounting.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 34,
+      "status": "Pass",
+      "evidence": "Fee Disclosure: Service fees per bill and payment source fees (phí nguồn tiền) are calculated separately by the Fee Engine. The total payment amount, reflecting the sum of order amounts, service fees, and payment source fees, is returned in the API initiation response.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 35,
+      "status": "Pass",
+      "evidence": "Promotions Application: The Promotion Engine supports applying both 'Single Promotion' (discount on a specific bill) and 'Universal Promotion' (discount applied on the total order amount). Promotions are locked during order initiation and verified before final execution.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 36,
+      "status": "Pass",
+      "evidence": "Non-Instant Outcomes: Non-instant utility bills are placed in a 'PROCESSING' state, returning estimated settlement timelines. Reconciliation Core matches final statuses once billing partners upload daily reports.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 37,
+      "status": "Fail",
+      "evidence": "Ledger Mismatches: ZAS records multi-bill transaction entries under the aggregated 'GlobalTransID'. However, billing partners and some payment gateways return statement logs containing individual transaction 'TransID' references. This mismatch prevents the automated Reconciliation Tool from reconciling accounts automatically, requiring manual intervention.",
+      "severity": "High"
+    },
+    {
+      "row_index": 38,
+      "status": "Pass",
+      "evidence": "Limits and Caps: ACv2 checks the user's KYC level and account transaction limits prior to payment execution, rejecting requests that exceed established limits.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 39,
+      "status": "Pass",
+      "evidence": "Regulatory Compliance: Transaction and wallet limits are enforced at the API gateway layer in compliance with SBV (State Bank of Vietnam) guidelines.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 40,
+      "status": "Pass",
+      "evidence": "Dispute Initiation: FMC exposes query APIs and dispute resolution endpoints to allow customer support tools to trigger refunds/reversals for failed bill transactions.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 41,
+      "status": "Pass",
+      "evidence": "Default SOF: The SoF resolver prioritizes the user's most recently used and available payment method, allowing cashier services to display smart defaults.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 42,
+      "status": "Pass",
+      "evidence": "Openness of SOF: Internal calling services can request a specific 'sof_id' or allow the FMC SoF Engine to return all eligible sources of funds (Wallet, Bank Cards, BNPL, savings) for selection.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 43,
+      "status": "N/A",
+      "evidence": "Linking and unlinking bank accounts is managed by the Bank Linkage service, not Payment Core.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 44,
+      "status": "Fail",
+      "evidence": "Fallback Gaps: If a combined top-up-and-pay order fails during the bank card topup phase (e.g. card invalid or bank rejected), the system fails the entire multi-bill order immediately and lacks fallback routing to alternate linked cards or wallet balances.",
+      "severity": "Medium"
+    },
+    {
+      "row_index": 45,
+      "status": "Pass",
+      "evidence": "Prerequisites Check: FMC performs pre-flight validation (such as checking card linkage status and wallet balance) prior to initiating the multi-bill checkout.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 46,
+      "status": "Pass",
+      "evidence": "Processing States: States are clearly defined ('SUBMITTED', 'PROCESSING', 'SUCCESS', 'FAILED') and mapped to distinct gRPC metadata fields.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 47,
+      "status": "Pass",
+      "evidence": "Unambiguous Results: Structured gRPC error codes separate user-correctable errors (like card expired) from system-level timeouts, enabling calling services to display precise result statuses.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 48,
+      "status": "Pass",
+      "evidence": "Unique IDs: Every transaction leg gets a unique 'trans_id', mapped to the main 'zp_trans_id' (order reference) and 'app_trans_id' (merchant reference), guaranteeing complete traceability.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 49,
+      "status": "Pass",
+      "evidence": "Maintenance States: Maintenance windows for partner billing connections are configured in the Gateway Router, which returns codes.Unavailable with scheduled downtimes, avoiding hangs.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 50,
+      "status": "Pass",
+      "evidence": "Decision Moment: The Fee and Rate Engines return the finalized payment fee, discounts, and exchange rates during the confirmation step.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 51,
+      "status": "Flag",
+      "evidence": "Outdated Data: In multi-bill payments involving foreign currency conversion, the exchange rate is cached. If a rate expires but is not refreshed, FMC may execute transactions using stale rates, exposing the system to financial risk.",
+      "severity": "Medium"
+    },
+    {
+      "row_index": 52,
+      "status": "Pass",
+      "evidence": "Sync Balance: Wallet balance updates are committed in ZAS synchronously with payment execution, ensuring data consistency across ledger databases.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 53,
+      "status": "Pass",
+      "evidence": "Specific Errors: Downstream billing provider rejections are translated into specific internal error codes (e.g. 'BILL_ALREADY_PAID', 'BILL_NOT_FOUND') rather than generic errors.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 54,
+      "status": "Pass",
+      "evidence": "Error next step: Responses include an 'InstructionCode' directing calling services on how to handle failures (e.g. display error, retry, check history).",
+      "severity": "Low"
+    },
+    {
+      "row_index": 55,
+      "status": "N/A",
+      "evidence": "Retaining user input is a client-side cashier interface concern. Stateless backend APIs expect complete requests on each call.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 56,
+      "status": "Pass",
+      "evidence": "Deduplication: Enforced via unique database constraints on 'app_trans_id' and distributed Redis locks to reject duplicate payment payloads.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 57,
+      "status": "N/A",
+      "evidence": "Error UI styling is a cashier client-side concern and not applicable to backend gRPC error responses.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 58,
+      "status": "Pass",
+      "evidence": "Peak Load Design: Bulkhead isolation and rate limiters protect the FMC thread pools and database connections from cascading outages during peak billing hours (e.g. bill release days).",
+      "severity": "Low"
+    },
+    {
+      "row_index": 59,
+      "status": "N/A",
+      "evidence": "OTP validation is managed by the User Authentication service, not Payment Core.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 60,
+      "status": "Pass",
+      "evidence": "Support Context: All transaction logs containing 'X-Correlation-ID' are stored in Elasticsearch, allowing support teams to trace multi-bill legs and callbacks.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 61,
+      "status": "N/A",
+      "evidence": "Customer support dashboard routing and queue management are operations-tooling concerns.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 62,
+      "status": "Pass",
+      "evidence": "Next Best Action: Error taxonomies map to specific resolution actions in the CS Admin Tool to facilitate dispute resolutions.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 63,
+      "status": "Pass",
+      "evidence": "Status visibility: PE maintains a transaction history log that captures state changes, making transitions visible to audit services.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 64,
+      "status": "N/A",
+      "evidence": "Direct links to support desks within flows are client-side UI configurations.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 65,
+      "status": "Flag",
+      "evidence": "Manual Operations: Settling payment mismatches and uploading partner billing statements remain manually triggered by operators, presenting human-error risks.",
+      "severity": "Medium"
+    },
+    {
+      "row_index": 66,
+      "status": "Pass",
+      "evidence": "Performance speed: PE APIs optimize data fetching using read-replicas, ensuring responses fall within the 300ms SLA.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 67,
+      "status": "Pass",
+      "evidence": "Surface Sync: Balances and transaction logs are synchronized within 100ms in ZAS, preventing conflicting data displays.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 68,
+      "status": "Pass",
+      "evidence": "Callback Return: Partner callback handlers process asynchronous notifications and resume the PE Saga state correctly, even if the calling client has disconnected.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 69,
+      "status": "Pass",
+      "evidence": "Debug logs: Key events are logged, and sensitive data (such as bank details, user PINs, CVVs) are redacted via logging filters.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 70,
+      "status": "Flag",
+      "evidence": "Cascading Outage: Under the 'Dependent' billing rule, billing partner downtime blocks the entire multi-bill transaction. The system lacks a degraded queue-and-retry mode to execute the remaining bills while holding the failed ones.",
+      "severity": "Medium"
+    },
+    {
+      "row_index": 71,
+      "status": "Pass",
+      "evidence": "Rate Limits: Gateway routers enforce strict rate limiting per Client IP and AppID to defend against service exhaustion.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 72,
+      "status": "Pass",
+      "evidence": "Idempotent Retries: Retrying a gRPC checkout request with the same 'app_trans_id' returns the identical transaction status from PE, preventing duplicate payments.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 73,
+      "status": "N/A",
+      "evidence": "Notifying users of tariff and limit changes is a customer communications and marketing concern.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 74,
+      "status": "N/A",
+      "evidence": "Adapting defaults based on usage habits is a cashier client-side interface concern.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 75,
+      "status": "N/A",
+      "evidence": "Restoring user confidence and presenting restored-account screens are client-side concerns.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 76,
+      "status": "N/A",
+      "evidence": "Displaying accumulated cashback and interest tracking are cashier frontend concerns.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 77,
+      "status": "N/A",
+      "evidence": "Ensuring brand tone consistency is a marketing and copywriting concern.",
+      "severity": "Low"
+    },
+    {
+      "row_index": 78,
+      "status": "Pass",
+      "evidence": "Accurate expectations: Estimated billing processing times returned in the checkout response are calibrated using historical response times.",
+      "severity": "Low"
+    }
+  ],
+  "summary": {
+    "squad_product": "Payment Core / Multi-Bill Payments with Any SoF",
+    "reviewer": "Antigravity (System-as-Actor Technical Audit)",
+    "date": "26 May 2026",
+    "scope": "Technical audit of Multi-Bill Payment flows within Payment Core (PE & FMC). Treated Payment Core as the product, and ACv2, AE, ZAS, BC, and Billing Services as users. Evaluated parameter propagation, distributed locks, Saga engine state transitions, and double-entry ledger mappings for both Independent and Dependent multi-bill rules.",
+    "key_risks": "1. [Critical] Reconciliation ledger mismatch where billing statement uploads match on 'TransID' while ZAS maps on 'GlobalTransID', causing automated reconciliation failures (Row 37).\n2. [Medium] Downstream queries to partner billing providers are executed synchronously in the payment thread, risking gRPC timeouts (default 5000ms) and thread pool starvation in FMC (Row 11 & 29).\n3. [Medium] Failure in combined card topup-and-pay flow aborts the entire multi-bill order immediately, lacking automated fallback routing to alternative cards or wallet balances (Row 44).\n4. [Medium] Tight dependency on billing partner uptime; billing partner downtime blocks the entire payment flow for dependent bills due to lack of a degraded retry queue (Row 70).",
+    "high_severity": "Row 37 (Ledger Mapping): Mismatch between internal ledger 'GlobalTransID' aggregation and external statement 'TransID' reporting. ZAS records all transaction entries under the global ID, but the statements match individual legs, forcing manual balance reconciliation by the Finance team.",
+    "med_severity": "1. Downstream queries to partner billing services are executed synchronously during checkout, risking FMC thread pool starvation if partner APIs experience latency (Row 11 & 29).\n2. Gaps in SoF fallback logic: if the primary NAPAS card top-up fails mid-flow, the system fails the entire multi-bill order immediately rather than falling back to alternative cards or wallet balances (Row 44).\n3. Exchange rate caching for foreign billing payments presents freshness risks if cached rates are served without validating active parameters in real time (Row 51).\n4. Manual operations triggers are required for operations teams to settle mismatches and upload partner statements, increasing human error risks (Row 65).\n5. Under the 'Dependent' billing rule, billing partner downtime blocks the entire multi-bill transaction, lacking a degraded queue-and-retry mechanism to process other bills (Row 70).",
+    "low_severity": "1. Parameter consistency using standardized terms ('zp_trans_id', 'sof_id', 'app_trans_id') across microservices (Row 5).\n2. Distributed locks on 'app_trans_id' and row-level locking on 'zp_trans_id' effectively prevent double-submit and race conditions (Row 8).\n3. Internal communication is secured using mutual TLS (mTLS) and token authentication (Row 23).\n4. Saga transitions utilize idempotency validation to ensure safe retry attempts (Row 56).",
+    "next_steps": "1. [Urgent - PE Squad] Re-engineer the Reconciliation Core matching engine to support matching bank statements against 'SourceTransID' or individual 'TransID' to resolve automated reconciliation failures (Target: Q3 2026).\n2. [Q3 2026 - FMC Team] Implement automated fallback card/wallet routing in the cashier engine if the initial NAPAS top-up fails.\n3. [Q4 2026 - PE Squad] Refactor downstream biller validations to run via asynchronous queues, isolating payment execution threads from partner api latencies.",
+    "questions": "1. Should we support merchant-initiated partial refunds for multi-bill orders as a single request, or should they be processed as independent refund transactions?\n2. Are there alerts configured in ZAS when a multi-bill transaction gets stuck in a half-committed state (e.g., top-up succeeded but bill payment failed)?"
+  }
+}

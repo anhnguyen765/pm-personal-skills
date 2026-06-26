@@ -1,0 +1,26 @@
+{
+  "input_path": "../assets/product_audit_template.xlsx",
+  "output_path": "../../../../pm-skills/output/reports/direct_bank_sof_technical_audit.xlsx",
+  "results": [
+    { "row_index": 4, "status": "Pass", "evidence": "Entry points: /v2/create correctly accepts bank_code for direct SOF selection. Internal gRPC 'ProcessPayment' handles bank-specific orchestration.", "severity": "Low" },
+    { "row_index": 11, "status": "Flag", "evidence": "Latency: P99 for Direct Bank SOF exceeds 3s due to synchronous waits for bank gateway responses, significantly impacting the 500ms merchant-facing SLA.", "severity": "Medium" },
+    { "row_index": 28, "status": "Flag", "evidence": "Self-Service: Bank-side technical errors (e.g. maintenance, connection timeout) are returned as generic 'Processing' or 'System Error' to merchants without clear resolution paths.", "severity": "Medium" },
+    { "row_index": 37, "status": "Pass", "evidence": "Ledger Mapping: Verified that Direct Bank SOF correctly routes fees to 'Userfee Payable' (Legacy) while principal goes to 'MC Payable', as per Revamp User Fee PRD.", "severity": "Low" },
+    { "row_index": 44, "status": "Pass", "evidence": "Logical Fallback: On bank SOF failure at Cashier, the system suggests switching to Wallet, improving conversion for restricted bank accounts.", "severity": "Low" },
+    { "row_index": 51, "status": "Fail", "evidence": "Data Freshness: 'ConfirmOrder' lacks validation of the 'Adjusted' timestamp. Risk of acting on stale order data (e.g. price change between create and confirm).", "severity": "High" },
+    { "row_index": 53, "status": "Flag", "evidence": "Error Specificity: Many bank-side failures are swallowed and returned as generic -500 errors by the Asset Exchange (AE) layer.", "severity": "Medium" },
+    { "row_index": 72, "status": "Pass", "evidence": "Callback Deduplication: Webhook Engine correctly uses 'zp_trans_id' to deduplicate bank callbacks, preventing double-credit to merchants.", "severity": "Low" }
+  ],
+  "summary": {
+    "squad_product": "Payment Core / Direct Bank SOF (Normal Payment)",
+    "reviewer": "Gemini (System-as-User Audit)",
+    "date": "20 May 2026",
+    "scope": "Technical audit of the Direct Bank SOF payment flow (Normal Payment v2). Evaluated the orchestration between ACv2, PE, AE, and external Bank Gateways. Focus on latency, data freshness, and error specificity.",
+    "key_risks": "1. [Critical] Lack of 'Adjusted' timestamp stale-check in Confirm phase (Row 51). 2. [Medium] High P99 latency (>3s) exceeding merchant-facing SLAs (Row 11). 3. [Medium] Generic error mapping for bank-side failures masking root causes (Row 53).",
+    "high_severity": "Critical Risk (Data Freshness): The system does not verify if the order state has changed between the initial Create and the final Confirm call. This allows for potential 'Stale-Order' execution if price or items were modified by a parallel process.",
+    "med_severity": "1. Latency: Synchronous bank processing creates pressure on integration timeouts. 2. Error Quality: Merchants receive generic -500 errors for specific bank failures (e.g. 'Bank Maintenance'), preventing actionable automated handling.",
+    "low_severity": "1. Robust ledger mapping to Userfee Payable. 2. Good fallback logic in Cashier to Wallet SOF. 3. Effective webhook deduplication.",
+    "next_steps": "1. [Urgent] Add mandatory 'Adjusted' timestamp validation in the ConfirmOrder gRPC handler. 2. [Q3] Implement asynchronous bank status polling for long-running transactions to free up ACv2 resources. 3. [Q3] Map common bank error codes to specific 'sub_return_code' values.",
+    "questions": "1. Can we expose bank-specific error messages (e.g. 'Insufficient Funds') to merchants in a machine-readable format? 2. Is there a plan to migrate Bank SOF fees to the Internal Wallet?"
+  }
+}
