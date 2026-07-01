@@ -55,13 +55,13 @@ The binary will be at `pm-skills/tooling/mcp/pm-tools-mcp`.
 
 ### 2. Create the `.env` file
 
-Copy `.env.example` to `.env` and fill in credentials. Ask the user for these values — do NOT guess or invent them.
+Copy `.env.example` to `.env` and fill in credentials **and domain configuration**. Ask the user for these values — do NOT guess or invent them.
 
 ```bash
 cp .env.example .env
 ```
 
-Required variables:
+**Credentials** (required):
 
 | Variable | Description |
 |---|---|
@@ -72,7 +72,15 @@ Required variables:
 | `CONFLUENCE_EMAIL` | Email used to log into Confluence |
 | `CONFLUENCE_API_TOKEN` | Confluence API token (same profile page as Jira) |
 
-Optional:
+**Domain configuration** (required — tailors skills to the user's context):
+
+| Variable | Description | Example |
+|---|---|---|
+| `DOMAIN_NAME` | Team/domain name | `Payment Core`, `Cross-border`, `FX Management` |
+| `JIRA_PROJECT_KEY` | Primary Jira project key | `PCDPC`, `XB`, `FXM` |
+| `CONFLUENCE_SPACES` | Comma-separated Confluence space keys | `PAYMENTS`, `PAYMENTS,ENGINE` |
+
+**Optional:**
 
 | Variable | Description |
 |---|---|

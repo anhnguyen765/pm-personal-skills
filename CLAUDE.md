@@ -1,6 +1,27 @@
-# Claude Project Instructions: Jora
+# Claude Project Instructions: PM Skills Suite
 
-This project is a personalised suite of Product Management (PM) skills and tools. It provides automated workflows for Jira, Confluence, and document generation for the **ZaloPay Payment Core** platform.
+This project is a **customisable suite of Product Management (PM) skills and tools**. It provides automated workflows for Jira, Confluence, and document generation tailored to your domain (e.g., Payment Core, Cross-border, FX Management, etc.).
+
+## Getting Started
+
+**Quick setup (recommended):**
+```bash
+./setup.sh
+```
+
+The script will:
+- Build the `pm-tools-mcp` binary (provides 5 MCP tools for Claude Desktop, Code, and web)
+- Create `.env` from your credentials
+- Wire up `.claude/settings.json` and Claude Desktop config
+- Ask you which domain/project you are working in (so skills are contextualised correctly)
+
+**Manual setup:**
+1. Edit `.env` with your Jira/Confluence credentials and domain scope
+2. Update `.claude/settings.json` to point `pm-tools.command` to your local `pm-skills/tooling/mcp/pm-tools-mcp` binary (use absolute path)
+3. For Claude Desktop: merge `pm-skills/tooling/mcp/claude_desktop_config.json` into `~/Library/Application Support/Claude/claude_desktop_config.json`
+4. Restart Claude Code / Desktop
+
+See `AGENTS.md` for AI-assisted onboarding.
 
 ## Project Structure
 - `.claude/commands/`: Custom slash commands for each PM skill (invoke with `/skill-name`).
@@ -15,9 +36,9 @@ Invoke these with `/` prefix in Claude Code:
 
 | Command | Description |
 |---|---|
-| `/jira` | Velocity analysis, stuck task resolution, and grooming-ready ticket writing for Payment Core |
-| `/prd` | Generate and refine technical PRDs for Fintech Core Payment platforms |
-| `/data-analysis` | Synthesise platform metrics, cross-border KPIs, and identify next actionable items for Payment Core and Cross-border PO |
+| `/jira` | Velocity analysis, stuck task resolution, and grooming-ready ticket writing (configured for your domain during setup) |
+| `/prd` | Generate and refine technical PRDs for your platform |
+| `/data-analysis` | Synthesise platform metrics, KPIs, and identify next actionable items (configured for your domain) |
 | `/advisor` | Synthesise Confluence technical documentation for architectural guidance |
 | `/memo` | Socratic debate + executive decision memo drafting |
 | `/grilling` | Interview relentlessly about a plan or design — stress-test assumptions before building (integrates with memo/prd) |
@@ -62,14 +83,13 @@ See `pm-skills/tooling/WEB_FETCHER.md` for detailed usage and examples.
 4. Test artifacts in `pm-skills/output/sandbox/`.
 
 ### Jira Automation
-- Prefer MCP tools for single issue lookups and sprint searches.
-- Use `pm-skills/tooling/jira/daily_report` for bulk daily reporting.
-- Sprint prefix is always **"PCDPC"** (e.g., "PCDPC - Sprint 26.06.A").
+- Use the `jira_get` and `jira_search` MCP tools for issue lookups and JQL searches.
+- Domain context is loaded from `.env` during setup (e.g., your project key, board ID, team prefix).
+- JQL examples: `project = YOUR_PROJECT AND status = 'In Progress'`, `assignee = currentUser() AND updated >= -7d`.
 
 ### Confluence Research
-- Search via MCP: `mcp__atlassian__confluence_search`
-- Priority spaces: "Zalopay Technology Management", "Payment Engine".
-- High-signal keywords: `FMC/PE`, `AEv2`, `ZAS`, `Idempotency`, `ACv2`.
+- Use the `confluence_search` and `confluence_fetch` MCP tools to find and retrieve pages.
+- Spaces and keywords are configured in `.env` based on your domain (set during setup).
 
 ### SA Diagrams
 - Use the `/ascii` skill for all system flow visualisations.
