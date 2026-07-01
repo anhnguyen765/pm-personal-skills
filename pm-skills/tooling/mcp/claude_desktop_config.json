@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "pm-tools": {
+      "command": "/REPLACE/WITH/ABSOLUTE/PATH/TO/pm-tools-mcp",
+      "env": {
+        "JIRA_URL": "https://jira.example.com",
+        "JIRA_API_TOKEN": "your-jira-bearer-token",
+        "CONFLUENCE_URL": "https://confluence.example.com",
+        "CONFLUENCE_EMAIL": "you@example.com",
+        "CONFLUENCE_API_TOKEN": "your-confluence-api-token"
+      }
+    }
+  }
+}

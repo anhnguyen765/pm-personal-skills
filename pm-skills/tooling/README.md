@@ -1,8 +1,52 @@
 # Tooling
 
-Custom Go binaries providing direct access to Jira, Confluence, and web content without MCP.
+Custom Go binaries providing direct access to Jira, Confluence, and web content — both as standalone CLI tools and as an MCP server for Claude Desktop / Claude web.
 
-## Installation
+## MCP Server (`mcp/`)
+
+`pm-tools-mcp` is a unified MCP server that exposes all tools below to **Claude Desktop**, **Claude Code**, or any MCP-compatible client. It is the recommended way to share this tooling with teammates.
+
+**Tools exposed:**
+
+| Tool | Description |
+|---|---|
+| `jira_get` | Get a Jira issue by key (full details + comments) |
+| `jira_search` | JQL search — returns a Markdown table |
+| `confluence_search` | Full-text search across Confluence pages |
+| `confluence_fetch` | Fetch a Confluence page by ID (cleaned text) |
+| `web_fetch` | Fetch any URL (text / html / json output) |
+
+**Build:**
+```bash
+cd mcp && ./build.sh
+# or: go build -o pm-tools-mcp server.go
+```
+
+**Claude Desktop setup** (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+```json
+{
+  "mcpServers": {
+    "pm-tools": {
+      "command": "/absolute/path/to/pm-tools-mcp",
+      "env": {
+        "JIRA_URL": "https://jira.example.com",
+        "JIRA_API_TOKEN": "your-token",
+        "CONFLUENCE_URL": "https://confluence.example.com",
+        "CONFLUENCE_EMAIL": "you@example.com",
+        "CONFLUENCE_API_TOKEN": "your-token"
+      }
+    }
+  }
+}
+```
+
+A ready-to-edit template is at `mcp/claude_desktop_config.json`.
+
+**Credentials:** The MCP server loads credentials from environment variables passed in the config above, or from the nearest `.env` file in the working directory (same lookup as the CLI tools).
+
+---
+
+## Installation (CLI tools)
 
 All binaries are pre-compiled for Apple Silicon (ARM64). To rebuild:
 
@@ -15,6 +59,9 @@ cd confluence && go build -o confluence confluence.go
 
 # Web
 cd web && go build -o web web.go
+
+# MCP server
+cd mcp && go build -o pm-tools-mcp server.go
 ```
 
 ## Jira

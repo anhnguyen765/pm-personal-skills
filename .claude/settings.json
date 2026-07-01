@@ -2,7 +2,10 @@
   "mcpServers": {
     "atlassian": {
       "command": "npx",
-      "args": ["-y", "@atlassian/atlassian-mcp-server"],
+      "args": [
+        "-y",
+        "@atlassian/atlassian-mcp-server"
+      ],
       "env": {
         "JIRA_URL": "${JIRA_URL}",
         "JIRA_EMAIL": "${JIRA_EMAIL}",
@@ -14,7 +17,20 @@
     },
     "fetch": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-fetch"]
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-fetch"
+      ]
+    },
+    "pm-tools": {
+      "command": "/Users/n3rd/po/pm-personal-skills/pm-skills/tooling/mcp/pm-tools-mcp",
+      "env": {
+        "JIRA_URL": "${JIRA_URL}",
+        "JIRA_API_TOKEN": "${JIRA_API_TOKEN}",
+        "CONFLUENCE_URL": "${CONFLUENCE_URL}",
+        "CONFLUENCE_EMAIL": "${CONFLUENCE_EMAIL}",
+        "CONFLUENCE_API_TOKEN": "${CONFLUENCE_API_TOKEN}"
+      }
     }
   }
 }
